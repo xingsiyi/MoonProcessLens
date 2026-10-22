@@ -110,6 +110,28 @@ pub fn Engine::inspect(self : Engine) -> Inspection {
 }
 
 ///|
+/// Earliest buffered event, for host-driven watermark and batching policies.
+pub fn Engine::next_event_time(self : Engine) -> Int64? {
+  if self.buffer.is_empty() { None } else { Some(self.buffer[0].event.time) }
+}
+
+///|
+/// Earliest active deadline. The host still determines when event time is
+/// complete; this value must not be treated as a wall-clock watermark.
+pub fn Engine::next_deadline(self : Engine) -> Int64? {
+  let mut result : Int64? = None
+  for branch in self.active {
+    result = min_optional(result, branch.started + self.patterns[branch.pattern_index].within)
+  }
+  result
+}
+
+///|
+pub fn Engine::is_finished(self : Engine) -> Bool {
+  self.watermark == FINAL_WATERMARK
+}
+
+///|
 pub fn Inspection::watermark(self : Inspection) -> Int64 {
   self.watermark
 }
