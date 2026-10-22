@@ -1,0 +1,5 @@
+import {
+  "oyjh0381/mooncep" @cep,
+}
+
+pkgtype(kind: "executable")

@@ -1,0 +1,6 @@
+import {
+  "oyjh0381/mooncep" @cep,
+  "moonbitlang/core/env",
+}
+
+pkgtype(kind: "executable")
