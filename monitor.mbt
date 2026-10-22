@@ -5,9 +5,9 @@ pub(all) struct MonitorStats {
   matches : Int64
   timeouts : Int64
   work : Int64
-  buffered_events : Int
-  active_states : Int
-  pending_text_units : Int
+  buffered_events : Int32
+  active_states : Int32
+  pending_text_units : Int32
 }
 
 ///|
@@ -27,9 +27,9 @@ pub struct Monitor {
 pub fn Monitor::new(
   patterns : Array[Pattern],
   limits~ : Limits = Limits::default(),
-  max_commands~ : Int = 10000,
-  max_line~ : Int = 1048576,
-  commands_per_chunk~ : Int = 4096,
+  max_commands~ : Int32 = 10000,
+  max_line~ : Int32 = 1048576,
+  commands_per_chunk~ : Int32 = 4096,
 ) -> Monitor raise CepError {
   {
     reader: CommandReader::new(max_line~, max_commands=commands_per_chunk),
@@ -44,7 +44,7 @@ pub fn Monitor::new(
 
 ///|
 pub fn Monitor::fork(self : Monitor) -> Monitor {
-  { ..self, reader: self.reader.fork(), session: self.session.fork() }
+  { ..self, reader: self.reader.fork(), session: self.session.fork(), }
 }
 
 ///|
@@ -59,7 +59,10 @@ fn Monitor::commit(self : Monitor, staged : Monitor) -> Unit {
 }
 
 ///|
-fn Monitor::execute(self : Monitor, commands : Array[StreamInput]) -> Array[Batch] raise CepError {
+fn Monitor::execute(
+  self : Monitor,
+  commands : Array[StreamInput],
+) -> Array[Batch] raise CepError {
   let batches = []
   let mut emitted = 0
   for command in commands {
@@ -68,7 +71,10 @@ fn Monitor::execute(self : Monitor, commands : Array[StreamInput]) -> Array[Batc
       Progress(batch) => {
         let added = batch.matches.length() + batch.timeouts.length()
         if added > self.session.engine.limits.outputs_per_call - emitted {
-          raise Resource(resource="monitor outputs per call", limit=self.session.engine.limits.outputs_per_call)
+          raise Resource(
+            resource="monitor outputs per call",
+            limit=self.session.engine.limits.outputs_per_call,
+          )
         }
         emitted += added
         self.advances += 1L
@@ -83,7 +89,10 @@ fn Monitor::execute(self : Monitor, commands : Array[StreamInput]) -> Array[Batc
 }
 
 ///|
-pub fn Monitor::ingest(self : Monitor, chunk : String) -> Array[Batch] raise CepError {
+pub fn Monitor::ingest(
+  self : Monitor,
+  chunk : String,
+) -> Array[Batch] raise CepError {
   let staged = self.fork()
   let commands = staged.reader.feed(chunk)
   let batches = staged.execute(commands)
@@ -94,11 +103,18 @@ pub fn Monitor::ingest(self : Monitor, chunk : String) -> Array[Batch] raise Cep
 ///|
 /// Finish the final non-newline-terminated command. By default also close all
 /// event-time deadlines. A repeated successful finish returns no new batches.
-pub fn Monitor::finish_input(self : Monitor, close_time~ : Bool = true) -> Array[Batch] raise CepError {
-  if self.reader.closed { return [] }
+pub fn Monitor::finish_input(
+  self : Monitor,
+  close_time~ : Bool = true,
+) -> Array[Batch] raise CepError {
+  if self.reader.closed {
+    return []
+  }
   let staged = self.fork()
   let commands = staged.reader.finish()
-  if close_time { commands.push(Advance(9007230790740991L)) }
+  if close_time {
+    commands.push(Advance(9007230790740991L))
+  }
   let batches = staged.execute(commands)
   self.commit(staged)
   batches

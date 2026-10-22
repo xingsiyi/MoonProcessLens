@@ -23,19 +23,21 @@ pub fn projection_to_json(plan : ProjectionPlan) -> Json {
   {
     "schema_version": 1,
     "pattern": Json::string(plan.pattern),
-    "columns": Json::array(plan.columns.map(column => {
-      let fields : Map[String, Json] = Map([
-        ("name", Json::string(column.name)),
-        ("type", Json::string(projection_tag(column.projection))),
-      ])
-      if projection_capture(column.projection) is Some(name) {
-        fields.set("capture", Json::string(name))
-      }
-      if projection_field(column.projection) is Some(name) {
-        fields.set("field", Json::string(name))
-      }
-      Json::object(fields)
-    })),
+    "columns": Json::array(
+      plan.columns.map(column => {
+        let fields : Map[String, Json] = Map([
+          ("name", Json::string(column.name)),
+          ("type", Json::string(projection_tag(column.projection))),
+        ])
+        if projection_capture(column.projection) is Some(name) {
+          fields.set("capture", Json::string(name))
+        }
+        if projection_field(column.projection) is Some(name) {
+          fields.set("field", Json::string(name))
+        }
+        Json::object(fields)
+      }),
+    ),
   }
 }
 
@@ -45,7 +47,12 @@ fn projection_from_column(value : Json, path : String) -> Column raise CepError 
   let name = codec_text_property(object, "name", path)
   let tag = codec_text_property(object, "type", path)
   let projection = match tag {
-    "entity_key" | "pattern_name" | "start_time" | "end_time" | "duration" | "absence" => {
+    "entity_key"
+    | "pattern_name"
+    | "start_time"
+    | "end_time"
+    | "duration"
+    | "absence" => {
       codec_keys(object, ["name", "type"], path)
       match tag {
         "entity_key" => EntityKey
@@ -60,7 +67,13 @@ fn projection_from_column(value : Json, path : String) -> Column raise CepError 
       codec_keys(object, ["name", "type", "capture"], path)
       CaptureSize(codec_text_property(object, "capture", path))
     }
-    "first" | "last" | "sum_integer" | "sum_decimal" | "minimum" | "maximum" | "average_decimal" => {
+    "first"
+    | "last"
+    | "sum_integer"
+    | "sum_decimal"
+    | "minimum"
+    | "maximum"
+    | "average_decimal" => {
       codec_keys(object, ["name", "type", "capture", "field"], path)
       let capture = codec_text_property(object, "capture", path)
       let field = codec_text_property(object, "field", path)
@@ -76,21 +89,39 @@ fn projection_from_column(value : Json, path : String) -> Column raise CepError 
     }
     _ => raise Invalid(path="\{path}.type", reason="unknown projection type")
   }
-  { name, projection }
+  { name, projection, }
 }
 
 ///|
-pub fn projection_from_json(pattern : Pattern, value : Json) -> ProjectionPlan raise CepError {
+pub fn projection_from_json(
+  pattern : Pattern,
+  value : Json,
+) -> ProjectionPlan raise CepError {
   let object = codec_object(value, "projection")
   codec_keys(object, ["schema_version", "pattern", "columns"], "projection")
-  if codec_int32(codec_required(object, "schema_version", "projection"), "projection.schema_version") != 1 {
-    raise Invalid(path="projection.schema_version", reason="only version 1 is supported")
+  if codec_int32(
+      codec_required(object, "schema_version", "projection"),
+      "projection.schema_version",
+    ) !=
+    1 {
+    raise Invalid(
+      path="projection.schema_version",
+      reason="only version 1 is supported",
+    )
   }
   if codec_text_property(object, "pattern", "projection") != pattern.id {
-    raise Invalid(path="projection.pattern", reason="projection targets a different pattern")
+    raise Invalid(
+      path="projection.pattern",
+      reason="projection targets a different pattern",
+    )
   }
-  let items = codec_array(codec_required(object, "columns", "projection"), "projection.columns")
-  if items.length() > 128 { raise Resource(resource="projection columns", limit=128) }
+  let items = codec_array(
+    codec_required(object, "columns", "projection"),
+    "projection.columns",
+  )
+  if items.length() > 128 {
+    raise Resource(resource="projection columns", limit=128)
+  }
   let columns = []
   for index, item in items {
     columns.push(projection_from_column(item, "projection.columns[\{index}]"))
@@ -100,7 +131,9 @@ pub fn projection_from_json(pattern : Pattern, value : Json) -> ProjectionPlan r
 
 ///|
 pub fn projected_record_to_json(fields : Array[Field]) -> Json raise CepError {
-  if fields.length() > 128 { raise Resource(resource="record fields", limit=128) }
+  if fields.length() > 128 {
+    raise Resource(resource="record fields", limit=128)
+  }
   let object : Map[String, Json] = Map([])
   for field in fields {
     require_label(field.name, "record.field")

@@ -5,7 +5,14 @@ test "monitor commits framing and recognition together" {
   let b = format_command(Observe(Event::new("b", "k", 1L, "b")))
   ignore(monitor.ingest(a + "\n"))
   assert_eq(monitor.stats().accepted_events, 1L)
-  assert_true(try { ignore(monitor.ingest(b + "\ninvalid\n")); false } catch { _ => true })
+  assert_true(
+    try {
+      ignore(monitor.ingest(b + "\ninvalid\n"))
+      false
+    } catch {
+      _ => true
+    },
+  )
   assert_eq(monitor.stats().accepted_events, 1L)
   ignore(monitor.ingest(b))
   assert_eq(monitor.stats().accepted_events, 1L)
@@ -23,7 +30,15 @@ test "monitor recognition failure rolls back already parsed lines" {
   let initial = format_command(Advance(2L)) + "\n"
   ignore(monitor.ingest(initial))
   let bad = format_command(Observe(Event::new("late", "k", 1L, "a"))) + "\n"
-  assert_true(try { ignore(monitor.ingest(bad)); false } catch { LateEvent(..) => true; _ => false })
+  assert_true(
+    try {
+      ignore(monitor.ingest(bad))
+      false
+    } catch {
+      LateEvent(..) => true
+      _ => false
+    },
+  )
   assert_eq(monitor.stats().accepted_events, 0L)
   assert_eq(monitor.stats().pending_text_units, 0)
   assert_eq(monitor.session().commands().length(), 1)
