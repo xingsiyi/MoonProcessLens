@@ -140,6 +140,18 @@ fn append_match(
 }
 
 ///|
+fn append_candidate(
+  candidates : Array[Match],
+  value : Match,
+  limits : Limits,
+) -> Unit raise CepError {
+  if candidates.length() >= limits.active_states {
+    raise Resource(resource="match candidates", limit=limits.active_states)
+  }
+  candidates.push(value)
+}
+
+///|
 fn expand_branch(
   branch : Branch,
   pattern : Pattern,
@@ -154,7 +166,7 @@ fn expand_branch(
     if pattern.absence is Some(_) {
       append_state(states, branch, seen, limits)
     } else {
-      append_match(matches, make_match(pattern, branch, false), limits)
+      append_candidate(matches, make_match(pattern, branch, false), limits)
     }
     return
   }
@@ -369,7 +381,7 @@ fn expire_states(
     let deadline = branch.started + pattern.within
     if deadline < at || (inclusive && deadline == at) {
       if branch.stage == pattern.stages.length() {
-        append_match(candidates, make_match(pattern, branch, true), limits)
+        append_candidate(candidates, make_match(pattern, branch, true), limits)
       } else {
         expired.push(branch)
       }
@@ -401,32 +413,65 @@ pub fn Engine::advance_watermark(self : Engine, requested : Int64) -> Batch rais
   if requested < self.watermark {
     raise WatermarkRegression(previous=self.watermark, requested~)
   }
-  if requested < 0L || requested > 9007199254740991L {
-    raise Invalid(path="watermark", reason="expected 0..9007199254740991")
+  if requested < 0L || requested > 9007230790740991L {
+    raise Invalid(path="watermark", reason="expected 0..9007230790740991")
   }
   let buffer = self.buffer.copy()
-  let mut active = self.active.copy()
+  let partitions : Map[String, Array[Branch]] = Map([])
+  for branch in self.active {
+    match partitions.get(branch.key) {
+      Some(states) => states.push(branch)
+      None => partitions.set(branch.key, [branch])
+    }
+  }
+  let mut active_count = self.active.length()
   let matches : Array[Match] = []
   let timeouts : Array[Timeout] = []
   let work = Work::{ used: 0, limit: self.limits.work_per_call }
   let mut processed = 0
   while buffer.length() > 0 && buffer[0].event.time <= requested {
     let time = buffer[0].event.time
-    active = expire_states(active, time, false, self.patterns, matches, timeouts, self.limits, work)
+    let touched : Map[String, Bool] = Map([])
     while buffer.length() > 0 && buffer[0].event.time == time {
       let item = heap_pop(buffer).unwrap()
-      active = process_item(active, item, self.patterns, matches, self.limits, work)
+      let previous = partitions.get(item.event.key).unwrap_or([])
+      let pending = expire_states(previous, time, false, self.patterns, matches, timeouts, self.limits, work)
+      let updated = process_item(pending, item, self.patterns, matches, self.limits, work)
+      active_count += updated.length() - previous.length()
+      if active_count > self.limits.active_states {
+        raise Resource(resource="active states", limit=self.limits.active_states)
+      }
+      if updated.is_empty() {
+        partitions.remove(item.event.key) |> ignore
+      } else {
+        partitions.set(item.event.key, updated)
+      }
+      if partitions.length() > self.limits.partitions {
+        raise Resource(resource="partitions", limit=self.limits.partitions)
+      }
+      touched.set(item.event.key, true)
       processed += 1
     }
-    active = expire_states(active, time, true, self.patterns, matches, timeouts, self.limits, work)
+    for key, _ in touched {
+      let previous = partitions.get(key).unwrap_or([])
+      let updated = expire_states(previous, time, true, self.patterns, matches, timeouts, self.limits, work)
+      active_count += updated.length() - previous.length()
+      if updated.is_empty() {
+        partitions.remove(key) |> ignore
+      } else {
+        partitions.set(key, updated)
+      }
+    }
   }
-  active = expire_states(active, requested, true, self.patterns, matches, timeouts, self.limits, work)
-  let keys : Map[String, Bool] = Map([])
-  for branch in active {
-    keys.set(branch.key, true)
-  }
-  if keys.length() > self.limits.partitions {
-    raise Resource(resource="partitions", limit=self.limits.partitions)
+  let active : Array[Branch] = []
+  let keys = partitions.keys().collect()
+  keys.sort()
+  for key in keys {
+    let previous = partitions.get(key).unwrap()
+    let updated = expire_states(previous, requested, true, self.patterns, matches, timeouts, self.limits, work)
+    for branch in updated {
+      active.push(branch)
+    }
   }
   if matches.length() + timeouts.length() > self.limits.outputs_per_call {
     raise Resource(resource="outputs per call", limit=self.limits.outputs_per_call)
@@ -435,4 +480,11 @@ pub fn Engine::advance_watermark(self : Engine, requested : Int64) -> Batch rais
   self.active = active
   self.watermark = requested
   { matches, timeouts, processed, work: work.used }
+}
+
+///|
+/// Close every possible event and deadline in the documented timestamp domain.
+/// A failed finish has the same rollback semantics as advance_watermark.
+pub fn Engine::finish(self : Engine) -> Batch raise CepError {
+  self.advance_watermark(9007230790740991L)
 }

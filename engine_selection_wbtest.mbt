@@ -197,3 +197,19 @@ test "trailing absence observes all same-time occurrences through deadline" {
     assert_eq(batch.matches().length(), if cancelled { 0 } else { 1 })
   }
 }
+
+///|
+test "output budget counts selected outputs rather than discarded candidates" {
+  for trailing_absence in [false, true] {
+    let engine = Engine::new(
+      [selection_pattern(SkipPastLast, trailing_absence~)],
+      limits={ ..Limits::default(), outputs_per_call: 1 },
+    )
+    for (id, kind, time) in [("a1", "a", 0L), ("a2", "a", 1L), ("b1", "b", 2L)] {
+      ignore(engine.push(Event::new(id, "k", time, kind)))
+    }
+    let batch = engine.advance_watermark(if trailing_absence { 11L } else { 2L })
+    assert_eq(batch.matches().length(), 1)
+    assert_eq(batch.timeouts().length(), 0)
+  }
+}
