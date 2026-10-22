@@ -11,3 +11,7 @@ description = "Bounded event-time complex event pattern detection for MoonBit"
 keywords = [ "cep", "events", "patterns", "event-time", "streaming" ]
 
 preferred_target = "wasm-gc"
+
+import {
+  "moonbitlang/x@0.4.49",
+}

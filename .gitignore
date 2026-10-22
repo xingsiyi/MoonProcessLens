@@ -2,6 +2,7 @@ _build/
 target/
 .mooncakes/
 .local/
+.build-check/
 __pycache__/
 *.pyc
 *.log
