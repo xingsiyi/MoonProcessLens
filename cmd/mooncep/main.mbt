@@ -35,13 +35,10 @@ fn run(args : Array[String]) -> Unit raise {
       let text = read_text(args[3])
       // File input is chunked through the same transactional interface used by
       // network adapters. The CLI itself loads one bounded file into memory.
-      let mut position = 0
-      while position < text.length() {
-        let end = (position + 65536).min(text.length())
-        for batch in monitor.ingest(text[position:end].to_owned()) {
+      for chunk in @cep.command_chunks(text) {
+        for batch in monitor.ingest(chunk.to_owned()) {
           print_batch(program, batch)
         }
-        position = end
       }
       for batch in monitor.finish_input() { print_batch(program, batch) }
       println(@cep.monitor_stats_to_json(monitor.stats()).stringify())

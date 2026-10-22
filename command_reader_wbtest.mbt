@@ -1,6 +1,6 @@
 ///|
 test "command framing is independent of chunk boundaries and CRLF" {
-  let text = format_command(Observe(Event::new("e", "k", 0L, "中文"))) +
+  let text = format_command(Observe(Event::new("e", "k", 0L, "中文😀"))) +
     "\r\n\n" +
     format_command(Advance(10L))
   let baseline = CommandReader::new()
@@ -8,10 +8,25 @@ test "command framing is independent of chunk boundaries and CRLF" {
   expected.append(baseline.finish())
   for split in 0..<=text.length() {
     let reader = CommandReader::new()
-    let actual = reader.feed(text[:split].to_owned())
-    actual.append(reader.feed(text[split:].to_owned()))
+    let prefix = text.clamped_view(end=split)
+    let actual = reader.feed(prefix.to_owned())
+    actual.append(reader.feed(text[prefix.length():].to_owned()))
     actual.append(reader.finish())
     assert_eq(actual, expected)
+  }
+}
+
+///|
+test "Unicode-safe chunk iterator preserves every scalar and always progresses" {
+  let text = "a😀中𝄞z"
+  for size in 1..=text.length() {
+    let builder = StringBuilder()
+    for part in command_chunks(text, max_units=size) {
+      assert_true(part.length() >= 1)
+      assert_true(part.length() <= size.max(2))
+      builder.write_view(part)
+    }
+    assert_eq(builder.to_string(), text)
   }
 }
 
