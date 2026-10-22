@@ -196,17 +196,17 @@ fn consume_branch(
   work.charge()
   if branch.stage == pattern.stages.length() {
     if pattern.absence is Some(condition) &&
-      !condition.evaluate(item.event, branch.captures) {
+      !condition.evaluate_unchecked(item.event, branch.captures) {
       append_state(states, branch, seen, limits)
     }
     return
   }
   let stage = pattern.stages[branch.stage]
   if stage.forbidden is Some(condition) &&
-    condition.evaluate(item.event, branch.captures) {
+    condition.evaluate_unchecked(item.event, branch.captures) {
     return
   }
-  let accepted = stage.condition.evaluate(item.event, branch.captures)
+  let accepted = stage.condition.evaluate_unchecked(item.event, branch.captures)
   if stage.contiguity == SkipAny ||
     (stage.contiguity == SkipNext && !accepted) {
     append_state(states, branch, seen, limits)
@@ -334,8 +334,8 @@ fn process_item(
   for index, pattern in patterns {
     work.charge()
     let stage = pattern.stages[0]
-    if stage.condition.evaluate(item.event, []) &&
-      !(stage.forbidden is Some(c) && c.evaluate(item.event, [])) {
+    if stage.condition.evaluate_unchecked(item.event, []) &&
+      !(stage.forbidden is Some(c) && c.evaluate_unchecked(item.event, [])) {
       let captures : Array[Capture] = pattern.stages.map(stage => {
         name: stage.name,
         events: [],

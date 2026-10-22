@@ -28,7 +28,7 @@ fn compare_condition_fields(
 /// types compare false, including NotEqual; Not then uses ordinary Boolean
 /// negation. Empty All is true and empty Any is false. A capture field uses its
 /// last event; an existing empty optional capture has count zero.
-pub fn Condition::evaluate(
+fn Condition::evaluate_unchecked(
   self : Condition,
   event : Event,
   captures : Array[Capture],
@@ -70,7 +70,7 @@ pub fn Condition::evaluate(
       }
     All(children) => {
       for child in children {
-        if !child.evaluate(event, captures) {
+        if !child.evaluate_unchecked(event, captures) {
           return false
         }
       }
@@ -78,12 +78,12 @@ pub fn Condition::evaluate(
     }
     Any(children) => {
       for child in children {
-        if child.evaluate(event, captures) {
+        if child.evaluate_unchecked(event, captures) {
           return true
         }
       }
       false
     }
-    Not(child) => !child.evaluate(event, captures)
+    Not(child) => !child.evaluate_unchecked(event, captures)
   }
 }
