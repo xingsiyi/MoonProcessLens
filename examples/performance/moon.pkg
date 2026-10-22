@@ -1,5 +1,5 @@
 import {
-  "JSJ222/mooncep" @cep,
+  "local/mooncep" @cep,
   "moonbitlang/core/env",
 }
 

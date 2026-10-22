@@ -1,6 +1,6 @@
 # API and ownership guide
 
-Import `JSJ222/mooncep` under an alias such as `cep`. Generated public signatures
+Import the local development module `local/mooncep` under an alias such as `cep`. Generated public signatures
 are in `pkg.generated.mbti`; this page explains the interfaces' responsibilities.
 
 | Interface | Responsibility |

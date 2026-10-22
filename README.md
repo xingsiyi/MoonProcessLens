@@ -8,17 +8,17 @@ MoonCEP 面向需要跨多条事件识别业务过程的开发者：账号异常
 设备告警与恢复、用户行为漏斗。核心输入是已经发生的事件，输出是命名捕获及事件证据。
 它不运行外部业务动作，也不要求部署流计算集群。
 
-## Install
+## Local development
 
-```sh
-moon add JSJ222/mooncep@0.1.0
-```
+The working module is `local/mooncep` and is marked private for local verification.
+The release namespace and repository will be supplied by the project owner.
+`local` is a temporary development prefix, not a publisher account.
 
-Add the library to your consuming package's `moon.pkg`:
+Packages inside this module import the library using:
 
 ```moonbit
 import {
-  "JSJ222/mooncep" @cep,
+  "local/mooncep" @cep,
 }
 ```
 

@@ -1,10 +1,10 @@
-name = "JSJ222/mooncep"
+name = "local/mooncep"
+
+private = true
 
 version = "0.1.0"
 
 license = "MIT"
-
-repository = "https://github.com/JSJ222/MoonCEP"
 
 readme = "README.md"
 
