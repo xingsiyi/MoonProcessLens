@@ -1,13 +1,26 @@
 ///|
 fn main raise {
-  let pattern = @cep.Pattern::new("checkout-funnel", [
-    @cep.Stage::new("view", @cep.Kind("view")),
-    @cep.Stage::new("coupon", @cep.Kind("coupon"), min=0),
-    @cep.Stage::new("purchase", @cep.Kind("purchase"), contiguity=@cep.SkipAny),
-  ], 600000L)
+  let pattern = @cep.Pattern::new(
+    "checkout-funnel",
+    [
+      @cep.Stage::new("view", @cep.Kind("view")),
+      @cep.Stage::new("coupon", @cep.Kind("coupon"), min=0),
+      @cep.Stage::new(
+        "purchase",
+        @cep.Kind("purchase"),
+        contiguity=@cep.SkipAny,
+      ),
+    ],
+    600000L,
+  )
   let metrics = @cep.DetectionMetrics::new()
   let engine = @cep.Engine::new([pattern])
-  for (id, kind, time) in [("v", "view", 0L), ("p1", "purchase", 100L), ("p2", "purchase", 200L)] {
+  for
+    (id, kind, time) in [
+      ("v", "view", 0L),
+      ("p1", "purchase", 100L),
+      ("p2", "purchase", 200L),
+    ] {
     ignore(engine.push(@cep.Event::new(id, "visit/1", time, kind)))
   }
   let preview = engine.preview([], 200L)

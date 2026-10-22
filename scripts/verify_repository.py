@@ -54,6 +54,10 @@ def inspect():
             empty.append(commit)
     if empty:
         raise ValueError("empty development commits: " + ", ".join(empty))
+    history_paths = git("log", "--all", "--format=", "--name-only").splitlines()
+    historical_leaks = sorted({name for name in history_paths if forbidden.search(name)})
+    if historical_leaks:
+        raise ValueError("local material/build output remains in Git history: " + ", ".join(historical_leaks))
     return {"production_moonbit_lines": production, "test_lines": tests,
             "example_lines": examples, "cli_lines": cli,
             "commits": commits, "tracked_local_materials": leaked,

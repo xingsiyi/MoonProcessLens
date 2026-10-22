@@ -19,7 +19,7 @@ test "command framing is independent of chunk boundaries and CRLF" {
 ///|
 test "Unicode-safe chunk iterator preserves every scalar and always progresses" {
   let text = "a😀中𝄞z"
-  for size in 1..=text.length() {
+  for size in 1..<=text.length() {
     let builder = StringBuilder()
     for part in command_chunks(text, max_units=size) {
       assert_true(part.length() >= 1)

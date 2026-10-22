@@ -112,7 +112,11 @@ pub fn Engine::inspect(self : Engine) -> Inspection {
 ///|
 /// Earliest buffered event, for host-driven watermark and batching policies.
 pub fn Engine::next_event_time(self : Engine) -> Int64? {
-  if self.buffer.is_empty() { None } else { Some(self.buffer[0].event.time) }
+  if self.buffer.is_empty() {
+    None
+  } else {
+    Some(self.buffer[0].event.time)
+  }
 }
 
 ///|
@@ -121,7 +125,10 @@ pub fn Engine::next_event_time(self : Engine) -> Int64? {
 pub fn Engine::next_deadline(self : Engine) -> Int64? {
   let mut result : Int64? = None
   for branch in self.active {
-    result = min_optional(result, branch.started + self.patterns[branch.pattern_index].within)
+    result = min_optional(
+      result,
+      branch.started + self.patterns[branch.pattern_index].within,
+    )
   }
   result
 }

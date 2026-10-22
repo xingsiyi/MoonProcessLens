@@ -47,13 +47,24 @@ test "monitor recognition failure rolls back already parsed lines" {
 ///|
 test "incremental monitor journal retains its prefix and fork ownership" {
   let monitor = Monitor::new([pair_pattern()], max_commands=5)
-  ignore(monitor.ingest(format_command(Observe(Event::new("a", "k", 0L, "a"))) + "\n"))
+  ignore(
+    monitor.ingest(
+      format_command(Observe(Event::new("a", "k", 0L, "a"))) + "\n",
+    ),
+  )
   let detached = monitor.fork()
-  ignore(monitor.ingest(format_command(Observe(Event::new("b", "k", 1L, "b"))) + "\n"))
+  ignore(
+    monitor.ingest(
+      format_command(Observe(Event::new("b", "k", 1L, "b"))) + "\n",
+    ),
+  )
   ignore(monitor.ingest(format_command(Advance(1L)) + "\n"))
   assert_eq(monitor.session().commands().length(), 3)
   assert_eq(detached.session().commands().length(), 1)
-  assert_eq(monitor.session().commands()[0], Observe(Event::new("a", "k", 0L, "a")))
+  assert_eq(
+    monitor.session().commands()[0],
+    Observe(Event::new("a", "k", 0L, "a")),
+  )
   ignore(monitor.finish_input())
   assert_eq(monitor.session().commands().length(), 4)
 }

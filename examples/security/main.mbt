@@ -1,9 +1,14 @@
 ///|
 fn main raise {
-  let pattern = @cep.Pattern::new("failed-then-success", [
-    @cep.Stage::new("failures", @cep.Kind("login_failed"), min=3, max=3),
-    @cep.Stage::new("success", @cep.Kind("login_success")),
-  ], 300000L, after_match=@cep.SkipPastLast)
+  let pattern = @cep.Pattern::new(
+    "failed-then-success",
+    [
+      @cep.Stage::new("failures", @cep.Kind("login_failed"), min=3, max=3),
+      @cep.Stage::new("success", @cep.Kind("login_success")),
+    ],
+    300000L,
+    after_match=@cep.SkipPastLast,
+  )
   let engine = @cep.Engine::new([pattern])
   // One user's events cannot complete another user's sequence.
   let events = [
@@ -19,6 +24,8 @@ fn main raise {
   let found = batch.matches()[0]
   assert_eq(found.events("failures").length(), 3)
   assert_eq(found.key(), "user/alex")
-  println("login signal: \{found.key()} failed=\{found.events("failures").length()} success=\{found.events("success")[0].id()}")
+  println(
+    "login signal: \{found.key()} failed=\{found.events("failures").length()} success=\{found.events("success")[0].id()}",
+  )
   println(@cep.match_to_json(found).stringify())
 }

@@ -124,13 +124,18 @@ pub fn CommandReader::fork(self : CommandReader) -> CommandReader {
 ///|
 /// Chunk a complete Unicode string without discarding a scalar at a UTF-16
 /// boundary. A two-unit scalar can exceed a requested size of one by one unit.
-pub fn command_chunks(text : String, max_units~ : Int = 65536) -> Iter[StringView] raise CepError {
+pub fn command_chunks(
+  text : String,
+  max_units~ : Int32 = 65536,
+) -> Iter[StringView] raise CepError {
   if max_units < 1 || max_units > 1048576 {
     raise Invalid(path="chunks.max_units", reason="expected 1..1048576")
   }
   let mut position = 0
   Iter::new(fn() -> StringView? {
-    if position == text.length() { return None }
+    if position == text.length() {
+      return None
+    }
     let size = max_units.min(text.length() - position)
     let mut view = text.clamped_view(start=position, end=position + size)
     if view.length() == 0 {

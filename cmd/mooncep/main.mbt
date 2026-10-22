@@ -18,18 +18,26 @@ fn print_batch(program : @cep.Program, batch : @cep.Batch) -> Unit raise {
 ///|
 fn run(args : Array[String]) -> Unit raise {
   if args.length() < 3 {
-    println("usage: mooncep validate CONFIG | run CONFIG COMMANDS.ndjson | restore SESSION.json COMMANDS.ndjson | inspect SESSION.json")
+    println(
+      "usage: mooncep validate CONFIG | run CONFIG COMMANDS.ndjson | restore SESSION.json COMMANDS.ndjson | inspect SESSION.json",
+    )
     @sys.exit(2)
     return
   }
   match args[1] {
     "validate" => {
-      if args.length() != 3 { @sys.exit(2); return }
+      if args.length() != 3 {
+        @sys.exit(2)
+        return
+      }
       let program = @cep.parse_program(read_text(args[2]))
       println(program.describe().stringify())
     }
     "run" => {
-      if args.length() != 4 { @sys.exit(2); return }
+      if args.length() != 4 {
+        @sys.exit(2)
+        return
+      }
       let program = @cep.parse_program(read_text(args[2]))
       let monitor = program.monitor()
       let text = read_text(args[3])
@@ -40,16 +48,26 @@ fn run(args : Array[String]) -> Unit raise {
           print_batch(program, batch)
         }
       }
-      for batch in monitor.finish_input() { print_batch(program, batch) }
+      for batch in monitor.finish_input() {
+        print_batch(program, batch)
+      }
       println(@cep.monitor_stats_to_json(monitor.stats()).stringify())
     }
     "inspect" => {
-      if args.length() != 3 { @sys.exit(2); return }
+      if args.length() != 3 {
+        @sys.exit(2)
+        return
+      }
       let session = @cep.parse_session(read_text(args[2]))
-      println(@cep.inspection_to_json(session.checkpoint().restore().inspect()).stringify())
+      println(
+        @cep.inspection_to_json(session.checkpoint().restore().inspect()).stringify(),
+      )
     }
     "restore" => {
-      if args.length() != 4 { @sys.exit(2); return }
+      if args.length() != 4 {
+        @sys.exit(2)
+        return
+      }
       let session = @cep.parse_session(read_text(args[2]))
       let reader = @cep.CommandReader::new()
       let commands = reader.feed(read_text(args[3]))
@@ -62,13 +80,16 @@ fn run(args : Array[String]) -> Unit raise {
       }
       println(@cep.batch_to_json(session.finish()).stringify())
     }
-    _ => { println("unknown command"); @sys.exit(2) }
+    _ => {
+      println("unknown command")
+      @sys.exit(2)
+    }
   }
 }
 
 ///|
 fn main {
-  try run(@env.args()) catch {
+  run(@env.args()) catch {
     error => {
       println("ERROR: \{error.to_string()}")
       @sys.exit(1)
