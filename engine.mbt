@@ -217,28 +217,86 @@ fn first_position(branch : Branch) -> Int64 {
 }
 
 ///|
-fn skipped(branch : Branch, pattern : Pattern, outputs : Array[Match]) -> Bool {
+fn start_skipped(
+  started : Int64,
+  first : Int64,
+  key : String,
+  pattern : Pattern,
+  outputs : Array[Match],
+) -> Bool {
   for output in outputs {
-    if output.pattern != pattern.id || output.key != branch.key {
+    if output.pattern != pattern.id || output.key != key {
       continue
     }
     match pattern.after_match {
       NoSkip => ()
       SkipToNextStart =>
-        if first_position(branch) == output.occurrences[0] {
+        if first == output.occurrences[0] {
           return true
         }
       SkipPastLast => {
         let last = output.occurrences[output.occurrences.length() - 1]
         let event_time = output.last_event_time()
-        if branch.started < event_time ||
-          (branch.started == event_time && first_position(branch) <= last) {
+        if started < event_time ||
+          (started == event_time && first <= last) {
           return true
         }
       }
     }
   }
   false
+}
+
+///|
+fn skipped(branch : Branch, pattern : Pattern, outputs : Array[Match]) -> Bool {
+  start_skipped(branch.started, first_position(branch), branch.key, pattern, outputs)
+}
+
+///|
+fn match_order(left : Match, right : Match) -> Int {
+  let mut order = left.ended.compare(right.ended)
+  if order != 0 { return order }
+  order = left.pattern.compare(right.pattern)
+  if order != 0 { return order }
+  order = left.key.compare(right.key)
+  if order != 0 { return order }
+  order = left.started.compare(right.started)
+  if order != 0 { return order }
+  order = left.occurrences[0].compare(right.occurrences[0])
+  if order != 0 { return order }
+  for i in 0..<left.captures.length() {
+    order = left.captures[i].events.length().compare(right.captures[i].events.length())
+    if order != 0 { return order }
+  }
+  for i in 0..<left.occurrences.length() {
+    order = left.occurrences[i].compare(right.occurrences[i])
+    if order != 0 { return order }
+  }
+  0
+}
+
+///|
+fn select_matches(
+  candidates : Array[Match],
+  patterns : Array[Pattern],
+  outputs : Array[Match],
+  limits : Limits,
+  work : Work,
+) -> Unit raise CepError {
+  candidates.sort_by(match_order)
+  let mut previous : Match? = None
+  for candidate in candidates {
+    work.charge()
+    let duplicate = previous is Some(value) && match_order(value, candidate) == 0
+    previous = Some(candidate)
+    if duplicate { continue }
+    for pattern in patterns {
+      if pattern.id == candidate.pattern &&
+        !start_skipped(candidate.started, candidate.occurrences[0], candidate.key, pattern, outputs) {
+        append_match(outputs, candidate, limits)
+      }
+    }
+  }
 }
 
 ///|
@@ -251,13 +309,14 @@ fn process_item(
   work : Work,
 ) -> Array[Branch] raise CepError {
   let states : Array[Branch] = []
+  let candidates : Array[Match] = []
   let seen : Map[String, Bool] = Map([])
   for branch in active {
     let pattern = patterns[branch.pattern_index]
     if branch.key != item.event.key {
       append_state(states, branch, seen, limits)
     } else if !skipped(branch, pattern, matches) {
-      consume_branch(branch, item, pattern, states, matches, seen, limits, work)
+      consume_branch(branch, item, pattern, states, candidates, seen, limits, work)
     }
   }
   for index, pattern in patterns {
@@ -281,10 +340,11 @@ fn process_item(
         last: item.event.time,
       }
       if !skipped(branch, pattern, matches) {
-        expand_branch(branch, pattern, states, matches, seen, limits, work)
+        expand_branch(branch, pattern, states, candidates, seen, limits, work)
       }
     }
   }
+  select_matches(candidates, patterns, matches, limits, work)
   states.filter(branch => !skipped(branch, patterns[branch.pattern_index], matches))
 }
 
@@ -300,26 +360,36 @@ fn expire_states(
   work : Work,
 ) -> Array[Branch] raise CepError {
   let retained = []
+  let expired : Array[Branch] = []
+  let candidates : Array[Match] = []
   for branch in active {
     work.charge()
     let pattern = patterns[branch.pattern_index]
+    if skipped(branch, pattern, matches) { continue }
     let deadline = branch.started + pattern.within
     if deadline < at || (inclusive && deadline == at) {
       if branch.stage == pattern.stages.length() {
-        append_match(matches, make_match(pattern, branch, true), limits)
+        append_match(candidates, make_match(pattern, branch, true), limits)
       } else {
+        expired.push(branch)
+      }
+    } else {
+      retained.push(branch)
+    }
+  }
+  select_matches(candidates, patterns, matches, limits, work)
+  for branch in expired {
+    let pattern = patterns[branch.pattern_index]
+    if !skipped(branch, pattern, matches) {
         if timeouts.length() + matches.length() >= limits.outputs_per_call {
           raise Resource(resource="outputs per call", limit=limits.outputs_per_call)
         }
         timeouts.push({
           pattern: pattern.id,
           key: branch.key,
-          deadline,
+          deadline: branch.started + pattern.within,
           captures: branch.captures,
         })
-      }
-    } else {
-      retained.push(branch)
     }
   }
   retained.filter(branch => !skipped(branch, patterns[branch.pattern_index], matches))
