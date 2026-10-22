@@ -8,7 +8,7 @@ pub(all) enum Condition {
   Compare(String, Comparison, Value)
   FieldCompare(String, Comparison, String)
   CaptureCompare(String, Comparison, String, String)
-  CaptureCount(String, Comparison, Int)
+  CaptureCount(String, Comparison, Int32)
   TextPrefix(String, String)
   TextContains(String, String)
   All(Array[Condition])
@@ -53,9 +53,9 @@ fn validate_capture_reference(
 fn validate_condition_node(
   condition : Condition,
   allowed : Array[String]?,
-  depth : Int,
-  used : Int,
-) -> Int raise CepError {
+  depth : Int32,
+  used : Int32,
+) -> Int32 raise CepError {
   if depth > 32 {
     raise Resource(resource="condition depth", limit=32)
   }

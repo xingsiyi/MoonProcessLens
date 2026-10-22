@@ -16,16 +16,12 @@ test "stage defaults and bounded occurrence inspection" {
 ///|
 test "stage occurrence limits reject invalid combinations" {
   for pair in [(-1, 1), (0, 0), (1, 0), (3, 2), (1, 33)] {
-    let result = Some(
-      Stage::new("stage", Always, min=pair.0, max=pair.1),
-    ) catch {
+    let result = Some(Stage::new("stage", Always, min=pair.0, max=pair.1)) catch {
       _ => None
     }
     assert_true(result is None)
   }
-  assert_true(
-    (Some(Stage::new("", Always)) catch { _ => None }) is None,
-  )
+  assert_true((Some(Stage::new("", Always)) catch { _ => None }) is None)
 }
 
 ///|
@@ -55,9 +51,7 @@ test "pattern rejects empty stages optional first and repeated names" {
   )
   assert_true(
     (Some(
-      Pattern::new("optional-first", [
-        Stage::new("first", Always, min=0),
-      ], 10L),
+      Pattern::new("optional-first", [Stage::new("first", Always, min=0)], 10L),
     ) catch {
       _ => None
     })
@@ -65,10 +59,11 @@ test "pattern rejects empty stages optional first and repeated names" {
   )
   assert_true(
     (Some(
-      Pattern::new("duplicate", [
-        Stage::new("same", Always),
-        Stage::new("same", Always),
-      ], 10L),
+      Pattern::new(
+        "duplicate",
+        [Stage::new("same", Always), Stage::new("same", Always)],
+        10L,
+      ),
     ) catch {
       _ => None
     })
@@ -90,9 +85,7 @@ test "pattern window bounds are inclusive and reject out of range" {
       is None,
     )
   }
-  assert_true(
-    (Some(Pattern::new("", stages, 10L)) catch { _ => None }) is None,
-  )
+  assert_true((Some(Pattern::new("", stages, 10L)) catch { _ => None }) is None)
 }
 
 ///|
@@ -105,8 +98,7 @@ test "pattern exact stage limit is accepted and one more is rejected" {
   assert_eq(pattern.stages().length(), 32)
   stages.push(Stage::new("overflow", Always))
   assert_true(
-    (Some(Pattern::new("too-many", stages, 10L)) catch { _ => None })
-    is None,
+    (Some(Pattern::new("too-many", stages, 10L)) catch { _ => None }) is None,
   )
 }
 
@@ -120,17 +112,18 @@ test "pattern exact aggregate capture limit is enforced" {
   assert_eq(exact.analysis().maximum_captures, 128)
   stages.push(Stage::new("overflow", Always))
   assert_true(
-    (Some(Pattern::new("too-many", stages, 10L)) catch { _ => None })
-    is None,
+    (Some(Pattern::new("too-many", stages, 10L)) catch { _ => None }) is None,
   )
 }
 
 ///|
 test "fixed sequence analysis counts captures and strict stages" {
-  let pattern = Pattern::new("fixed", [
-    Stage::new("first", Always),
-    Stage::new("last", Always, contiguity=Strict),
-  ], 10L, after_match=SkipPastLast)
+  let pattern = Pattern::new(
+    "fixed",
+    [Stage::new("first", Always), Stage::new("last", Always, contiguity=Strict)],
+    10L,
+    after_match=SkipPastLast,
+  )
   let analysis = pattern.analysis()
   assert_eq(analysis.minimum_captures, 2)
   assert_eq(analysis.maximum_captures, 2)
@@ -147,29 +140,41 @@ test "fixed sequence analysis counts captures and strict stages" {
 
 ///|
 test "analysis distinguishes repetition optionality and selection branches" {
-  let repeated = Pattern::new("repeated", [
-    Stage::new("first", Always, min=2, max=2),
-  ], 10L)
+  let repeated = Pattern::new(
+    "repeated",
+    [Stage::new("first", Always, min=2, max=2)],
+    10L,
+  )
   assert_eq(repeated.analysis().branching_risk, BoundedRepetition)
   assert_eq(repeated.analysis().minimum_captures, 2)
-  let optional = Pattern::new("optional", [
-    Stage::new("first", Always),
-    Stage::new("maybe", Always, min=0, max=1),
-  ], 10L)
+  let optional = Pattern::new(
+    "optional",
+    [Stage::new("first", Always), Stage::new("maybe", Always, min=0, max=1)],
+    10L,
+  )
   assert_eq(optional.analysis().nullable_stages, 1)
   assert_eq(optional.analysis().variable_stages, 1)
   assert_eq(optional.analysis().branching_risk, BoundedRepetition)
-  let branching = Pattern::new("branching", [
-    Stage::new("first", Always),
-    Stage::new("last", Always, contiguity=SkipAny),
-  ], 10L, after_match=SkipToNextStart)
+  let branching = Pattern::new(
+    "branching",
+    [
+      Stage::new("first", Always),
+      Stage::new("last", Always, contiguity=SkipAny),
+    ],
+    10L,
+    after_match=SkipToNextStart,
+  )
   assert_eq(branching.analysis().skip_any_stages, 1)
   assert_eq(branching.analysis().branching_risk, CombinatorialSelection)
   assert_eq(branching.after_match(), SkipToNextStart)
-  let variable = Pattern::new("two-variable", [
-    Stage::new("first", Always, min=1, max=2),
-    Stage::new("last", Always, min=1, max=3),
-  ], 10L)
+  let variable = Pattern::new(
+    "two-variable",
+    [
+      Stage::new("first", Always, min=1, max=2),
+      Stage::new("last", Always, min=1, max=3),
+    ],
+    10L,
+  )
   assert_eq(variable.analysis().minimum_captures, 2)
   assert_eq(variable.analysis().maximum_captures, 5)
   assert_eq(variable.analysis().branching_risk, CombinatorialSelection)
@@ -177,10 +182,12 @@ test "analysis distinguishes repetition optionality and selection branches" {
 
 ///|
 test "analysis reports guards and trailing absence" {
-  let pattern = Pattern::new("guarded", [
-    Stage::new("first", Always),
-    Stage::new("last", Always, forbidden=Always),
-  ], 10L, absence=Always)
+  let pattern = Pattern::new(
+    "guarded",
+    [Stage::new("first", Always), Stage::new("last", Always, forbidden=Always)],
+    10L,
+    absence=Always,
+  )
   assert_eq(pattern.analysis().guarded_stages, 1)
   assert_true(pattern.analysis().has_absence)
   assert_true(pattern.stage("last").unwrap().forbidden() is Some(_))
@@ -212,7 +219,12 @@ test "stage and pattern detach all nested condition arrays" {
   let absence_children : Array[Condition] = [Kind("late")]
   let first = Stage::new("first", All(children))
   let last = Stage::new("last", Always, forbidden=Any(guard_children))
-  let pattern = Pattern::new("owned", [first, last], 10L, absence=All(absence_children))
+  let pattern = Pattern::new(
+    "owned",
+    [first, last],
+    10L,
+    absence=All(absence_children),
+  )
   children.clear()
   guard_children.clear()
   absence_children.clear()
@@ -255,8 +267,13 @@ test "stage and pattern detach all nested condition arrays" {
 ///|
 test "positive conditions can reference only previous completed captures" {
   let first = Stage::new("first", Kind("created"))
-  let second = Stage::new("second", CaptureCompare("amount", Greater, "first", "amount"))
-  assert_eq(Pattern::new("valid", [first, second], 10L).stage_names(), ["first", "second"])
+  let second = Stage::new(
+    "second",
+    CaptureCompare("amount", Greater, "first", "amount"),
+  )
+  assert_eq(Pattern::new("valid", [first, second], 10L).stage_names(), [
+    "first", "second",
+  ])
   let self_reference = Stage::new("first", CaptureCount("first", Greater, 0))
   assert_true(
     (Some(Pattern::new("self", [self_reference], 10L)) catch { _ => None })
@@ -274,11 +291,24 @@ test "positive conditions can reference only previous completed captures" {
 ///|
 test "guards use prior captures and trailing absence can use every stage" {
   let first = Stage::new("first", Kind("created"))
-  let last = Stage::new("last", Kind("completed"), forbidden=CaptureCount("first", Equal, 1))
-  let pattern = Pattern::new("valid", [first, last], 10L, absence=CaptureCount("last", Equal, 1))
+  let last = Stage::new(
+    "last",
+    Kind("completed"),
+    forbidden=CaptureCount("first", Equal, 1),
+  )
+  let pattern = Pattern::new(
+    "valid",
+    [first, last],
+    10L,
+    absence=CaptureCount("last", Equal, 1),
+  )
   assert_eq(pattern.analysis().guarded_stages, 1)
   assert_true(pattern.analysis().has_absence)
-  let invalid_guard = Stage::new("last", Always, forbidden=CaptureCount("last", Equal, 1))
+  let invalid_guard = Stage::new(
+    "last",
+    Always,
+    forbidden=CaptureCount("last", Equal, 1),
+  )
   assert_true(
     (Some(Pattern::new("self-guard", [first, invalid_guard], 10L)) catch {
       _ => None
@@ -286,7 +316,14 @@ test "guards use prior captures and trailing absence can use every stage" {
     is None,
   )
   assert_true(
-    (Some(Pattern::new("missing", [first], 10L, absence=CaptureCount("unknown", Equal, 1))) catch {
+    (Some(
+      Pattern::new(
+        "missing",
+        [first],
+        10L,
+        absence=CaptureCount("unknown", Equal, 1),
+      ),
+    ) catch {
       _ => None
     })
     is None,
@@ -298,7 +335,14 @@ test "pattern rejects cyclic trailing absence before cloning" {
   let cycle : Array[Condition] = []
   cycle.push(Not(Any(cycle)))
   assert_true(
-    (Some(Pattern::new("cycle", [Stage::new("first", Always)], 10L, absence=All(cycle))) catch {
+    (Some(
+      Pattern::new(
+        "cycle",
+        [Stage::new("first", Always)],
+        10L,
+        absence=All(cycle),
+      ),
+    ) catch {
       _ => None
     })
     is None,

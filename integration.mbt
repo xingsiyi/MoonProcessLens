@@ -13,7 +13,7 @@ pub extend StreamInput with @debug.Debug::{to_repr}
 
 ///|
 fn clone_integration_event(event : Event) -> Event {
-  { ..event, fields: event.fields.copy() }
+  { ..event, fields: event.fields.copy(), }
 }
 
 ///|
@@ -68,7 +68,7 @@ pub fn Engine::with_limits(
     raise Resource(resource="partitions", limit=limits.partitions)
   }
   let detached = self.fork()
-  { ..detached, limits }
+  { ..detached, limits, }
 }
 
 ///|
@@ -100,7 +100,7 @@ pub struct Checkpoint {
 ///|
 /// Takes a detached checkpoint; later engine mutations do not change it.
 pub fn Engine::checkpoint(self : Engine) -> Checkpoint {
-  { state: self.fork() }
+  { state: self.fork(), }
 }
 
 ///|
@@ -124,12 +124,12 @@ pub fn Checkpoint::watermark(self : Checkpoint) -> Int64 {
 }
 
 ///|
-pub fn Checkpoint::buffered(self : Checkpoint) -> Int {
+pub fn Checkpoint::buffered(self : Checkpoint) -> Int32 {
   self.state.buffer.length()
 }
 
 ///|
-pub fn Checkpoint::active_states(self : Checkpoint) -> Int {
+pub fn Checkpoint::active_states(self : Checkpoint) -> Int32 {
   self.state.active.length()
 }
 
@@ -142,8 +142,8 @@ pub fn replay(
   patterns : Array[Pattern],
   commands : Array[StreamInput],
   limits~ : Limits = Limits::default(),
-  max_commands~ : Int = 10000,
-  max_outputs~ : Int = 100000,
+  max_commands~ : Int32 = 10000,
+  max_outputs~ : Int32 = 100000,
 ) -> Array[Batch] raise CepError {
   if max_commands < 1 || max_commands > 100000 {
     raise Invalid(path="replay.max_commands", reason="expected 1..100000")

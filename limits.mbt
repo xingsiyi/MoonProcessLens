@@ -47,7 +47,7 @@ priv struct Work {
 }
 
 ///|
-fn Work::charge(self : Work, amount~ : Int = 1) -> Unit raise CepError {
+fn Work::charge(self : Work, amount~ : Int32 = 1) -> Unit raise CepError {
   if amount < 0 || amount > self.limit - self.used {
     raise Resource(resource="work per call", limit=self.limit)
   }

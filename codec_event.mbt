@@ -61,4 +61,3 @@ pub fn checked_format_event(event : Event) -> String raise CepError {
   }
   text
 }
-

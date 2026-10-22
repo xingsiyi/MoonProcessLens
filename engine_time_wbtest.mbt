@@ -1,9 +1,10 @@
 ///|
 fn time_pair_pattern(within : Int64) -> Pattern raise CepError {
-  Pattern::new("time-boundary", [
-    Stage::new("a", Kind("a")),
-    Stage::new("b", Kind("b")),
-  ], within)
+  Pattern::new(
+    "time-boundary",
+    [Stage::new("a", Kind("a")), Stage::new("b", Kind("b"))],
+    within,
+  )
 }
 
 ///|
@@ -22,9 +23,12 @@ test "maximum event time still has a reachable positive timeout" {
 
 ///|
 test "finish reaches maximum absence deadline without overflowing" {
-  let pattern = Pattern::new("maximum-absence", [
-    Stage::new("a", Kind("a")),
-  ], 31536000000L, absence=Kind("cancel"))
+  let pattern = Pattern::new(
+    "maximum-absence",
+    [Stage::new("a", Kind("a"))],
+    31536000000L,
+    absence=Kind("cancel"),
+  )
   let engine = Engine::new([pattern])
   ignore(engine.push(Event::new("last-a", "k", 9007199254740991L, "a")))
   let batch = engine.finish()
@@ -124,10 +128,10 @@ test "positive completion at maximum event time wins before timeout" {
 
 ///|
 test "failed finish preserves pending events active state and watermark" {
-  let engine = Engine::new(
-    [time_pair_pattern(1L)],
-    limits={ ..Limits::default(), outputs_per_call: 1 },
-  )
+  let engine = Engine::new([time_pair_pattern(1L)], limits={
+    ..Limits::default(),
+    outputs_per_call: 1,
+  })
   ignore(engine.push(Event::new("a1", "left", 0L, "a")))
   ignore(engine.push(Event::new("a2", "right", 2L, "a")))
   assert_true(

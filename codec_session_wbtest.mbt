@@ -15,10 +15,25 @@ test "restore rejects corruption future versions and total replay work excess" {
   let session = Session::new([pair_pattern()])
   ignore(session.apply(Observe(Event::new("a", "k", 0L, "a"))))
   ignore(session.apply(Advance(0L)))
-  assert_true(try { ignore(parse_session(format_session(session), max_work=1)); false } catch { Resource(..) => true; _ => false })
+  assert_true(
+    try {
+      ignore(parse_session(format_session(session), max_work=1))
+      false
+    } catch {
+      Resource(..) => true
+      _ => false
+    },
+  )
   let wire = session_to_json(session)
   let object = codec_object(wire, "test")
   object.set("schema_version", Json::number(2.0))
-  assert_true(try { ignore(session_from_json(wire)); false } catch { _ => true })
+  assert_true(
+    try {
+      ignore(session_from_json(wire))
+      false
+    } catch {
+      _ => true
+    },
+  )
   assert_eq(session.watermark(), 0L)
 }

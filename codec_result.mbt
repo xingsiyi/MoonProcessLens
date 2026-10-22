@@ -11,12 +11,16 @@ fn capture_to_json(capture : Capture) -> Json {
 /// Length prefixes prevent collisions caused by delimiters in user identifiers.
 pub fn Match::identity(self : Match) -> String {
   let builder = StringBuilder()
-  builder.write_string("\{self.pattern.length()}:\{self.pattern}\{self.key.length()}:\{self.key}:")
+  builder.write_string(
+    "\{self.pattern.length()}:\{self.pattern}\{self.key.length()}:\{self.key}:",
+  )
   for capture in self.captures {
     builder.write_string("\{capture.events.length()},")
   }
   builder.write_string(":")
-  for ordinal in self.occurrences { builder.write_string("\{ordinal},") }
+  for ordinal in self.occurrences {
+    builder.write_string("\{ordinal},")
+  }
   builder.write_string(if self.absence { "absence" } else { "positive" })
   builder.to_string()
 }
@@ -30,7 +34,9 @@ pub fn match_to_json(value : Match) -> Json {
     "started": Json::string(value.started.to_string()),
     "ended": Json::string(value.ended.to_string()),
     "absence": Json::boolean(value.absence),
-    "occurrences": Json::array(value.occurrences.map(n => Json::string(n.to_string()))),
+    "occurrences": Json::array(
+      value.occurrences.map(n => Json::string(n.to_string())),
+    ),
     "captures": Json::array(value.captures.map(capture_to_json)),
   }
 }
@@ -60,7 +66,8 @@ pub fn batch_to_json(batch : Batch) -> Json {
 pub fn command_to_json(command : StreamInput) -> Json {
   match command {
     Observe(event) => { "type": "event", "event": event_to_json(event) }
-    Advance(time) => { "type": "watermark", "time": Json::string(time.to_string()) }
+    Advance(time) =>
+      { "type": "watermark", "time": Json::string(time.to_string()) }
   }
 }
 
@@ -74,13 +81,20 @@ pub fn command_from_json(value : Json) -> StreamInput raise CepError {
     }
     "watermark" => {
       codec_keys(object, ["type", "time"], "command")
-      let time = codec_int64(codec_required(object, "time", "command"), "command.time")
+      let time = codec_int64(
+        codec_required(object, "time", "command"),
+        "command.time",
+      )
       if time < 0L || time > 9007230790740991L {
-        raise Invalid(path="command.time", reason="watermark outside supported domain")
+        raise Invalid(
+          path="command.time",
+          reason="watermark outside supported domain",
+        )
       }
       Advance(time)
     }
-    _ => raise Invalid(path="command.type", reason="expected event or watermark")
+    _ =>
+      raise Invalid(path="command.type", reason="expected event or watermark")
   }
 }
 

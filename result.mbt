@@ -11,7 +11,7 @@ pub struct Match {
 
 ///|
 fn detach_captures(captures : Array[Capture]) -> Array[Capture] {
-  captures.map(capture => { name: capture.name, events: capture.events.copy() })
+  captures.map(capture => { name: capture.name, events: capture.events.copy(), })
 }
 
 ///|
@@ -102,8 +102,8 @@ pub fn Timeout::captures(self : Timeout) -> Array[Capture] {
 pub struct Batch {
   matches : Array[Match]
   timeouts : Array[Timeout]
-  processed : Int
-  work : Int
+  processed : Int32
+  work : Int32
 }
 
 ///|
@@ -117,15 +117,15 @@ pub fn Batch::matches(self : Batch) -> Array[Match] {
 
 ///|
 pub fn Batch::timeouts(self : Batch) -> Array[Timeout] {
-  self.timeouts.map(t => { ..t, captures: detach_captures(t.captures) })
+  self.timeouts.map(t => { ..t, captures: detach_captures(t.captures), })
 }
 
 ///|
-pub fn Batch::processed(self : Batch) -> Int {
+pub fn Batch::processed(self : Batch) -> Int32 {
   self.processed
 }
 
 ///|
-pub fn Batch::work(self : Batch) -> Int {
+pub fn Batch::work(self : Batch) -> Int32 {
   self.work
 }

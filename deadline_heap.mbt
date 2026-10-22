@@ -2,7 +2,7 @@
 priv struct DeadlineEntry {
   time : Int64
   key : String
-  generation : Int
+  generation : Int32
 }
 
 ///|
@@ -16,7 +16,9 @@ fn deadline_push(heap : Array[DeadlineEntry], entry : DeadlineEntry) -> Unit {
   let mut i = heap.length() - 1
   while i > 0 {
     let parent = (i - 1) / 2
-    if !deadline_before(heap[i], heap[parent]) { break }
+    if !deadline_before(heap[i], heap[parent]) {
+      break
+    }
     let saved = heap[i]
     heap[i] = heap[parent]
     heap[parent] = saved
@@ -34,8 +36,15 @@ fn deadline_pop(heap : Array[DeadlineEntry]) -> DeadlineEntry {
     while i * 2 + 1 < heap.length() {
       let left = i * 2 + 1
       let right = left + 1
-      let child = if right < heap.length() && deadline_before(heap[right], heap[left]) { right } else { left }
-      if !deadline_before(heap[child], heap[i]) { break }
+      let child = if right < heap.length() &&
+        deadline_before(heap[right], heap[left]) {
+        right
+      } else {
+        left
+      }
+      if !deadline_before(heap[child], heap[i]) {
+        break
+      }
       let saved = heap[i]
       heap[i] = heap[child]
       heap[child] = saved
@@ -48,10 +57,10 @@ fn deadline_pop(heap : Array[DeadlineEntry]) -> DeadlineEntry {
 ///|
 priv struct Processing {
   partitions : Map[String, Array[Branch]]
-  generations : Map[String, Int]
+  generations : Map[String, Int32]
   deadlines : Array[DeadlineEntry]
-  mut serial : Int
-  mut active_count : Int
+  mut serial : Int32
+  mut active_count : Int32
 }
 
 ///|
@@ -82,9 +91,15 @@ fn Processing::put(
   let mut earliest = 9007230790740991L
   for branch in states {
     work.charge()
-    earliest = earliest.min(branch.started + patterns[branch.pattern_index].within)
+    earliest = earliest.min(
+      branch.started + patterns[branch.pattern_index].within,
+    )
   }
-  deadline_push(self.deadlines, { time: earliest, key, generation: self.serial })
+  deadline_push(self.deadlines, {
+    time: earliest,
+    key,
+    generation: self.serial,
+  })
 }
 
 ///|
@@ -99,12 +114,19 @@ fn Processing::expire(
   work : Work,
 ) -> Unit raise CepError {
   while !self.deadlines.is_empty() &&
-    (self.deadlines[0].time < at || (inclusive && self.deadlines[0].time == at)) {
+        (
+          self.deadlines[0].time < at ||
+          (inclusive && self.deadlines[0].time == at)
+        ) {
     work.charge()
     let entry = deadline_pop(self.deadlines)
-    if self.generations.get(entry.key) != Some(entry.generation) { continue }
+    if self.generations.get(entry.key) != Some(entry.generation) {
+      continue
+    }
     let old = self.partitions.get(entry.key).unwrap_or([])
-    let updated = expire_states(old, at, inclusive, patterns, matches, timeouts, limits, work)
+    let updated = expire_states(
+      old, at, inclusive, patterns, matches, timeouts, limits, work,
+    )
     self.put(entry.key, updated, patterns, limits, work)
   }
 }

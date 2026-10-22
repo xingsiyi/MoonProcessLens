@@ -10,23 +10,26 @@ pub(all) enum Update {
 pub struct Session {
   mut engine : Engine
   mut commands : Array[StreamInput]
-  max_commands : Int
+  max_commands : Int32
 }
 
 ///|
 pub fn Session::new(
   patterns : Array[Pattern],
   limits~ : Limits = Limits::default(),
-  max_commands~ : Int = 10000,
+  max_commands~ : Int32 = 10000,
 ) -> Session raise CepError {
   if max_commands < 1 || max_commands > 100000 {
     raise Invalid(path="session.max_commands", reason="expected 1..100000")
   }
-  { engine: Engine::new(patterns, limits~), commands: [], max_commands }
+  { engine: Engine::new(patterns, limits~), commands: [], max_commands, }
 }
 
 ///|
-pub fn Session::apply(self : Session, command : StreamInput) -> Update raise CepError {
+pub fn Session::apply(
+  self : Session,
+  command : StreamInput,
+) -> Update raise CepError {
   if self.commands.length() >= self.max_commands {
     raise Resource(resource="journal commands", limit=self.max_commands)
   }
@@ -40,7 +43,11 @@ pub fn Session::apply(self : Session, command : StreamInput) -> Update raise Cep
 
 ///|
 pub fn Session::fork(self : Session) -> Session {
-  { engine: self.engine.fork(), commands: self.commands.copy(), max_commands: self.max_commands }
+  {
+    engine: self.engine.fork(),
+    commands: self.commands.copy(),
+    max_commands: self.max_commands,
+  }
 }
 
 ///|
@@ -59,7 +66,10 @@ pub fn Session::apply_many(
     if update is Progress(batch) {
       let count = batch.matches.length() + batch.timeouts.length()
       if count > self.engine.limits.outputs_per_call - outputs {
-        raise Resource(resource="session batch outputs", limit=self.engine.limits.outputs_per_call)
+        raise Resource(
+          resource="session batch outputs",
+          limit=self.engine.limits.outputs_per_call,
+        )
       }
       outputs += count
     }
@@ -94,16 +104,23 @@ pub fn Session::watermark(self : Session) -> Int64 {
 }
 
 ///|
-pub fn Session::buffered(self : Session) -> Int {
+pub fn Session::buffered(self : Session) -> Int32 {
   self.engine.buffer.length()
 }
 
 ///|
-pub fn Session::active_states(self : Session) -> Int {
+pub fn Session::active_states(self : Session) -> Int32 {
   self.engine.active.length()
 }
 
 ///|
-pub fn Session::with_limits(self : Session, limits : Limits) -> Session raise CepError {
-  { engine: self.engine.with_limits(limits), commands: self.commands.copy(), max_commands: self.max_commands }
+pub fn Session::with_limits(
+  self : Session,
+  limits : Limits,
+) -> Session raise CepError {
+  {
+    engine: self.engine.with_limits(limits),
+    commands: self.commands.copy(),
+    max_commands: self.max_commands,
+  }
 }

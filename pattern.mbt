@@ -31,8 +31,8 @@ pub extend AfterMatch with @debug.Debug::{to_repr}
 pub struct Stage {
   name : String
   condition : Condition
-  min : Int
-  max : Int
+  min : Int32
+  max : Int32
   contiguity : Contiguity
   forbidden : Condition?
 }
@@ -41,8 +41,8 @@ pub struct Stage {
 pub fn Stage::new(
   name : String,
   condition : Condition,
-  min~ : Int = 1,
-  max~ : Int = 1,
+  min~ : Int32 = 1,
+  max~ : Int32 = 1,
   contiguity~ : Contiguity = SkipNext,
   forbidden? : Condition,
 ) -> Stage raise CepError {
@@ -95,12 +95,12 @@ pub fn Stage::condition(self : Stage) -> Condition {
 }
 
 ///|
-pub fn Stage::minimum(self : Stage) -> Int {
+pub fn Stage::minimum(self : Stage) -> Int32 {
   self.min
 }
 
 ///|
-pub fn Stage::maximum(self : Stage) -> Int {
+pub fn Stage::maximum(self : Stage) -> Int32 {
   self.max
 }
 
@@ -150,7 +150,10 @@ pub fn Pattern::new(
     )
   }
   if stages.is_empty() {
-    raise Invalid(path="pattern.stages", reason="at least one stage is required")
+    raise Invalid(
+      path="pattern.stages",
+      reason="at least one stage is required",
+    )
   }
   if stages.length() > 32 {
     raise Resource(resource="pattern stages", limit=32)
@@ -226,7 +229,7 @@ pub fn Pattern::stage(self : Pattern, name : String) -> Stage? {
 }
 
 ///|
-pub fn Pattern::stage_at(self : Pattern, index : Int) -> Stage? {
+pub fn Pattern::stage_at(self : Pattern, index : Int32) -> Stage? {
   if index < 0 || index >= self.stages.length() {
     None
   } else {
@@ -270,14 +273,14 @@ pub extend BranchingRisk with @debug.Debug::{to_repr}
 
 ///|
 pub(all) struct PatternAnalysis {
-  minimum_captures : Int
-  maximum_captures : Int
-  nullable_stages : Int
-  variable_stages : Int
-  repeated_stages : Int
-  strict_stages : Int
-  skip_any_stages : Int
-  guarded_stages : Int
+  minimum_captures : Int32
+  maximum_captures : Int32
+  nullable_stages : Int32
+  variable_stages : Int32
+  repeated_stages : Int32
+  strict_stages : Int32
+  skip_any_stages : Int32
+  guarded_stages : Int32
   has_absence : Bool
   branching_risk : BranchingRisk
 } derive(Eq, @debug.Debug)

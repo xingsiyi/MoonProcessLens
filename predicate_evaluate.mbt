@@ -1,8 +1,5 @@
 ///|
-fn find_condition_capture(
-  captures : Array[Capture],
-  name : String,
-) -> Capture? {
+fn find_condition_capture(captures : Array[Capture], name : String) -> Capture? {
   for capture in captures {
     if capture.name == name {
       return Some(capture)
@@ -40,7 +37,11 @@ fn Condition::evaluate_unchecked(
     Compare(field, comparison, value) =>
       compare_condition_fields(event.field(field), comparison, Some(value))
     FieldCompare(left, comparison, right) =>
-      compare_condition_fields(event.field(left), comparison, event.field(right))
+      compare_condition_fields(
+        event.field(left),
+        comparison,
+        event.field(right),
+      )
     CaptureCompare(field, comparison, stage, captured_field) => {
       guard find_condition_capture(captures, stage) is Some(capture) else {
         return false
@@ -55,7 +56,8 @@ fn Condition::evaluate_unchecked(
     }
     CaptureCount(stage, comparison, count) =>
       match find_condition_capture(captures, stage) {
-        Some(capture) => compare_order(capture.events.length().compare(count), comparison)
+        Some(capture) =>
+          compare_order(capture.events.length().compare(count), comparison)
         None => false
       }
     TextPrefix(field, prefix) =>

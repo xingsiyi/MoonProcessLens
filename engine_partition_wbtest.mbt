@@ -1,6 +1,9 @@
 ///|
 test "expired keys release partition quota before a later key starts" {
-  let engine = Engine::new([pair_pattern()], limits={ ..Limits::default(), partitions: 1 })
+  let engine = Engine::new([pair_pattern()], limits={
+    ..Limits::default(),
+    partitions: 1,
+  })
   input(engine, "a", 0L, key="old")
   input(engine, "a", 11L, key="new")
   let batch = engine.advance_watermark(11L)
@@ -11,16 +14,30 @@ test "expired keys release partition quota before a later key starts" {
 
 ///|
 test "new keys at exact deadline retain old key until its timestamp closes" {
-  let engine = Engine::new([pair_pattern()], limits={ ..Limits::default(), partitions: 1 })
+  let engine = Engine::new([pair_pattern()], limits={
+    ..Limits::default(),
+    partitions: 1,
+  })
   input(engine, "a", 0L, key="old")
   input(engine, "a", 10L, key="new")
-  assert_true(try { ignore(engine.advance_watermark(10L)); false } catch { Resource(..) => true; _ => false })
+  assert_true(
+    try {
+      ignore(engine.advance_watermark(10L))
+      false
+    } catch {
+      Resource(..) => true
+      _ => false
+    },
+  )
   assert_eq(engine.buffered(), 2)
 }
 
 ///|
 test "many independent keys avoid scanning all states on every event" {
-  let engine = Engine::new([pair_pattern()], limits={ ..Limits::default(), work_per_call: 20000 })
+  let engine = Engine::new([pair_pattern()], limits={
+    ..Limits::default(),
+    work_per_call: 20000,
+  })
   for i in 0..<500 {
     input(engine, "a", 0L, key="k\{i}")
   }

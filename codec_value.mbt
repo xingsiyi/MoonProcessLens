@@ -3,7 +3,8 @@
 fn codec_value_to_json(value : Value) -> Json {
   match value {
     Text(text) => { "type": "text", "value": Json::string(text) }
-    Integer(number) => { "type": "integer", "value": Json::string(number.to_string()) }
+    Integer(number) =>
+      { "type": "integer", "value": Json::string(number.to_string()) }
     Decimal(number) => { "type": "decimal", "value": Json::number(number) }
     Boolean(flag) => { "type": "boolean", "value": Json::boolean(flag) }
     NullValue => { "type": "null" }
@@ -34,7 +35,10 @@ fn codec_value_from_json(value : Json, path : String) -> Value raise CepError {
     "text" => {
       let text = codec_string(raw, value_path)
       if text.length() > 4096 {
-        raise Invalid(path=value_path, reason="text exceeds 4096 UTF-16 code units")
+        raise Invalid(
+          path=value_path,
+          reason="text exceeds 4096 UTF-16 code units",
+        )
       }
       Text(text)
     }
@@ -58,4 +62,3 @@ fn codec_value_from_json(value : Json, path : String) -> Value raise CepError {
 pub fn value_from_json(value : Json) -> Value raise CepError {
   codec_value_from_json(value, "value")
 }
-

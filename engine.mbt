@@ -1,9 +1,9 @@
 ///|
 struct Branch {
-  pattern_index : Int
+  pattern_index : Int32
   key : String
-  stage : Int
-  count : Int
+  stage : Int32
+  count : Int32
   captures : Array[Capture]
   positions : Array[Int64]
   started : Int64
@@ -32,7 +32,10 @@ pub fn Engine::new(
   let names : Map[String, Bool] = Map([])
   for pattern in patterns {
     if names.contains(pattern.id) {
-      raise Invalid(path="patterns", reason="duplicate pattern id \{pattern.id}")
+      raise Invalid(
+        path="patterns",
+        reason="duplicate pattern id \{pattern.id}",
+      )
     }
     names.set(pattern.id, true)
   }
@@ -52,13 +55,16 @@ pub fn Engine::push(self : Engine, event : Event) -> Int64 raise CepError {
     raise LateEvent(time=event.time, watermark=self.watermark)
   }
   if self.buffer.length() >= self.limits.buffered_events {
-    raise Resource(resource="buffered events", limit=self.limits.buffered_events)
+    raise Resource(
+      resource="buffered events",
+      limit=self.limits.buffered_events,
+    )
   }
   if self.ordinal >= 9007199254740991L {
     raise Invalid(path="engine", reason="occurrence sequence exhausted")
   }
   let next = self.ordinal + 1L
-  heap_push(self.buffer, { event, ordinal: next })
+  heap_push(self.buffer, { event, ordinal: next, })
   self.ordinal = next
   next
 }
@@ -69,12 +75,12 @@ pub fn Engine::watermark(self : Engine) -> Int64 {
 }
 
 ///|
-pub fn Engine::buffered(self : Engine) -> Int {
+pub fn Engine::buffered(self : Engine) -> Int32 {
   self.buffer.length()
 }
 
 ///|
-pub fn Engine::active_states(self : Engine) -> Int {
+pub fn Engine::active_states(self : Engine) -> Int32 {
   self.active.length()
 }
 
@@ -86,7 +92,9 @@ pub fn Engine::limits(self : Engine) -> Limits {
 ///|
 fn branch_signature(branch : Branch) -> String {
   let builder = StringBuilder()
-  builder.write_string("\{branch.pattern_index}:\{branch.stage}:\{branch.count}:")
+  builder.write_string(
+    "\{branch.pattern_index}:\{branch.stage}:\{branch.count}:",
+  )
   for capture in branch.captures {
     builder.write_string("\{capture.events.length()},")
   }
@@ -105,7 +113,11 @@ fn make_match(pattern : Pattern, branch : Branch, absence : Bool) -> Match {
     captures: branch.captures,
     occurrences: branch.positions,
     started: branch.started,
-    ended: if absence { branch.started + pattern.within } else { branch.last },
+    ended: if absence {
+      branch.started + pattern.within
+    } else {
+      branch.last
+    },
     absence,
   }
 }
@@ -176,8 +188,13 @@ fn expand_branch(
   }
   if branch.count >= stage.min {
     expand_branch(
-      { ..branch, stage: branch.stage + 1, count: 0 },
-      pattern, states, matches, seen, limits, work,
+      { ..branch, stage: branch.stage + 1, count: 0, },
+      pattern,
+      states,
+      matches,
+      seen,
+      limits,
+      work,
     )
   }
 }
@@ -207,8 +224,7 @@ fn consume_branch(
     return
   }
   let accepted = stage.condition.evaluate_unchecked(item.event, branch.captures)
-  if stage.contiguity == SkipAny ||
-    (stage.contiguity == SkipNext && !accepted) {
+  if stage.contiguity == SkipAny || (stage.contiguity == SkipNext && !accepted) {
     append_state(states, branch, seen, limits)
   }
   if accepted && branch.count < stage.max {
@@ -217,8 +233,19 @@ fn consume_branch(
     let positions = branch.positions.copy()
     positions.push(item.ordinal)
     expand_branch(
-      { ..branch, count: branch.count + 1, captures, positions, last: item.event.time },
-      pattern, states, matches, seen, limits, work,
+      {
+        ..branch,
+        count: branch.count + 1,
+        captures,
+        positions,
+        last: item.event.time,
+      },
+      pattern,
+      states,
+      matches,
+      seen,
+      limits,
+      work,
     )
   }
 }
@@ -242,15 +269,11 @@ fn start_skipped(
     }
     match pattern.after_match {
       NoSkip => ()
-      SkipToNextStart =>
-        if first == output.occurrences[0] {
-          return true
-        }
+      SkipToNextStart => if first == output.occurrences[0] { return true }
       SkipPastLast => {
         let last = output.occurrences[output.occurrences.length() - 1]
         let event_time = output.last_event_time()
-        if started < event_time ||
-          (started == event_time && first <= last) {
+        if started < event_time || (started == event_time && first <= last) {
           return true
         }
       }
@@ -261,28 +284,50 @@ fn start_skipped(
 
 ///|
 fn skipped(branch : Branch, pattern : Pattern, outputs : Array[Match]) -> Bool {
-  start_skipped(branch.started, first_position(branch), branch.key, pattern, outputs)
+  start_skipped(
+    branch.started,
+    first_position(branch),
+    branch.key,
+    pattern,
+    outputs,
+  )
 }
 
 ///|
-fn match_order(left : Match, right : Match) -> Int {
+fn match_order(left : Match, right : Match) -> Int32 {
   let mut order = left.ended.compare(right.ended)
-  if order != 0 { return order }
+  if order != 0 {
+    return order
+  }
   order = left.pattern.compare(right.pattern)
-  if order != 0 { return order }
+  if order != 0 {
+    return order
+  }
   order = left.key.compare(right.key)
-  if order != 0 { return order }
+  if order != 0 {
+    return order
+  }
   order = left.started.compare(right.started)
-  if order != 0 { return order }
+  if order != 0 {
+    return order
+  }
   order = left.occurrences[0].compare(right.occurrences[0])
-  if order != 0 { return order }
+  if order != 0 {
+    return order
+  }
   for i in 0..<left.captures.length() {
-    order = left.captures[i].events.length().compare(right.captures[i].events.length())
-    if order != 0 { return order }
+    order = left.captures[i].events
+      .length()
+      .compare(right.captures[i].events.length())
+    if order != 0 {
+      return order
+    }
   }
   for i in 0..<left.occurrences.length() {
     order = left.occurrences[i].compare(right.occurrences[i])
-    if order != 0 { return order }
+    if order != 0 {
+      return order
+    }
   }
   0
 }
@@ -299,12 +344,21 @@ fn select_matches(
   let mut previous : Match? = None
   for candidate in candidates {
     work.charge()
-    let duplicate = previous is Some(value) && match_order(value, candidate) == 0
+    let duplicate = previous is Some(value) &&
+      match_order(value, candidate) == 0
     previous = Some(candidate)
-    if duplicate { continue }
+    if duplicate {
+      continue
+    }
     for pattern in patterns {
       if pattern.id == candidate.pattern &&
-        !start_skipped(candidate.started, candidate.occurrences[0], candidate.key, pattern, outputs) {
+        !start_skipped(
+          candidate.started,
+          candidate.occurrences[0],
+          candidate.key,
+          pattern,
+          outputs,
+        ) {
         append_match(outputs, candidate, limits)
       }
     }
@@ -328,7 +382,9 @@ fn process_item(
     if branch.key != item.event.key {
       append_state(states, branch, seen, limits)
     } else if !skipped(branch, pattern, matches) {
-      consume_branch(branch, item, pattern, states, candidates, seen, limits, work)
+      consume_branch(
+        branch, item, pattern, states, candidates, seen, limits, work,
+      )
     }
   }
   for index, pattern in patterns {
@@ -357,7 +413,9 @@ fn process_item(
     }
   }
   select_matches(candidates, patterns, matches, limits, work)
-  states.filter(branch => !skipped(branch, patterns[branch.pattern_index], matches))
+  states.filter(branch => {
+    !skipped(branch, patterns[branch.pattern_index], matches)
+  })
 }
 
 ///|
@@ -377,7 +435,9 @@ fn expire_states(
   for branch in active {
     work.charge()
     let pattern = patterns[branch.pattern_index]
-    if skipped(branch, pattern, matches) { continue }
+    if skipped(branch, pattern, matches) {
+      continue
+    }
     let deadline = branch.started + pattern.within
     if deadline < at || (inclusive && deadline == at) {
       if branch.stage == pattern.stages.length() {
@@ -393,23 +453,31 @@ fn expire_states(
   for branch in expired {
     let pattern = patterns[branch.pattern_index]
     if !skipped(branch, pattern, matches) {
-        if timeouts.length() + matches.length() >= limits.outputs_per_call {
-          raise Resource(resource="outputs per call", limit=limits.outputs_per_call)
-        }
-        timeouts.push({
-          pattern: pattern.id,
-          key: branch.key,
-          deadline: branch.started + pattern.within,
-          captures: branch.captures,
-        })
+      if timeouts.length() + matches.length() >= limits.outputs_per_call {
+        raise Resource(
+          resource="outputs per call",
+          limit=limits.outputs_per_call,
+        )
+      }
+      timeouts.push({
+        pattern: pattern.id,
+        key: branch.key,
+        deadline: branch.started + pattern.within,
+        captures: branch.captures,
+      })
     }
   }
-  retained.filter(branch => !skipped(branch, patterns[branch.pattern_index], matches))
+  retained.filter(branch => {
+    !skipped(branch, patterns[branch.pattern_index], matches)
+  })
 }
 
 ///|
 /// Close the event-time prefix through W. Any failure leaves the engine unchanged.
-pub fn Engine::advance_watermark(self : Engine, requested : Int64) -> Batch raise CepError {
+pub fn Engine::advance_watermark(
+  self : Engine,
+  requested : Int64,
+) -> Batch raise CepError {
   if requested < self.watermark {
     raise WatermarkRegression(previous=self.watermark, requested~)
   }
@@ -417,7 +485,13 @@ pub fn Engine::advance_watermark(self : Engine, requested : Int64) -> Batch rais
     raise Invalid(path="watermark", reason="expected 0..9007230790740991")
   }
   let buffer = self.buffer.copy()
-  let processing = Processing::{ partitions: Map([]), generations: Map([]), deadlines: [], serial: 0, active_count: 0 }
+  let processing = Processing::{
+    partitions: Map([]),
+    generations: Map([]),
+    deadlines: [],
+    serial: 0,
+    active_count: 0,
+  }
   let grouped : Map[String, Array[Branch]] = Map([])
   for branch in self.active {
     match grouped.get(branch.key) {
@@ -427,45 +501,87 @@ pub fn Engine::advance_watermark(self : Engine, requested : Int64) -> Batch rais
   }
   let matches : Array[Match] = []
   let timeouts : Array[Timeout] = []
-  let work = Work::{ used: 0, limit: self.limits.work_per_call }
+  let work = Work::{ used: 0, limit: self.limits.work_per_call, }
   for key, states in grouped {
     processing.put(key, states, self.patterns, self.limits, work)
   }
   let mut processed = 0
   while buffer.length() > 0 && buffer[0].event.time <= requested {
     let time = buffer[0].event.time
-    processing.expire(time, false, self.patterns, matches, timeouts, self.limits, work)
+    processing.expire(
+      time,
+      false,
+      self.patterns,
+      matches,
+      timeouts,
+      self.limits,
+      work,
+    )
     while buffer.length() > 0 && buffer[0].event.time == time {
       let item = heap_pop(buffer).unwrap()
       let previous = processing.partitions.get(item.event.key).unwrap_or([])
-      let updated = process_item(previous, item, self.patterns, matches, self.limits, work)
+      let updated = process_item(
+        previous,
+        item,
+        self.patterns,
+        matches,
+        self.limits,
+        work,
+      )
       processing.put(item.event.key, updated, self.patterns, self.limits, work)
       processed += 1
     }
-    processing.expire(time, true, self.patterns, matches, timeouts, self.limits, work)
+    processing.expire(
+      time,
+      true,
+      self.patterns,
+      matches,
+      timeouts,
+      self.limits,
+      work,
+    )
   }
-  processing.expire(requested, true, self.patterns, matches, timeouts, self.limits, work)
+  processing.expire(
+    requested,
+    true,
+    self.patterns,
+    matches,
+    timeouts,
+    self.limits,
+    work,
+  )
   let active : Array[Branch] = []
   let keys = processing.partitions.keys().collect()
   keys.sort()
   for key in keys {
-    for branch in processing.partitions.get(key).unwrap() { active.push(branch) }
+    for branch in processing.partitions.get(key).unwrap() {
+      active.push(branch)
+    }
   }
   matches.sort_by(match_order)
   timeouts.sort_by((a, b) => {
     let order = a.deadline.compare(b.deadline)
-    if order != 0 { order } else {
+    if order != 0 {
+      order
+    } else {
       let order = a.pattern.compare(b.pattern)
-      if order != 0 { order } else { a.key.compare(b.key) }
+      if order != 0 {
+        order
+      } else {
+        a.key.compare(b.key)
+      }
     }
   })
   if matches.length() + timeouts.length() > self.limits.outputs_per_call {
-    raise Resource(resource="outputs per call", limit=self.limits.outputs_per_call)
+    raise Resource(
+      resource="outputs per call",
+      limit=self.limits.outputs_per_call,
+    )
   }
   self.buffer = buffer
   self.active = active
   self.watermark = requested
-  { matches, timeouts, processed, work: work.used }
+  { matches, timeouts, processed, work: work.used, }
 }
 
 ///|
