@@ -1,29 +1,39 @@
-# MoonCEP domain language
+# MoonProcessLens domain language
 
-MoonCEP recognizes patterns in events that have already occurred.
+MoonProcessLens analyses observed activity histories to describe actual process paths,
+explain deviations from reference paths and measure elapsed work and waiting.
 
 ## Language
 
-**Event**:
-An identified business observation carrying an entity key, event time, kind and scalar fields.
+**Log event**:
+A completed activity occurrence with its identity, case, activity label, interval and optional resource.
 
-**Pattern**:
-A named description of an event sequence, its allowed elapsed time and match selection policy.
+**Case**:
+One business process instance, such as an order, ticket, repair job or pipeline run.
 
-**Stage**:
-A named positive event requirement with a predicate and occurrence bounds.
+**Trace**:
+The ordered activity occurrences belonging to one case.
 
-**Capture**:
-The ordered events assigned to one stage in a partial or complete match.
+**Directly-follows relation**:
+Two adjacent activities in an observed trace; adjacency alone does not establish causality.
 
-**Watermark**:
-A caller declaration that the stream prefix through a given event time is closed.
+**Variant**:
+An exact activity-label sequence shared by one or more observed cases, including repeated labels.
 
-**Match**:
-A complete assignment of distinct stream positions to a pattern's named captures.
+**Reference path**:
+A finite, named activity sequence representing an accepted or comparison process variant.
 
-**Absence**:
-A requirement that a forbidden event does not occur after the positive sequence and through its deadline.
+**Alignment**:
+A minimum-cost explanation connecting an observed trace to a reference path through synchronous, unexpected and missing activities.
 
-**Partition**:
-The observations sharing one entity key; events in different partitions never form one match.
+**Service work**:
+The sum of activity durations, including work performed concurrently.
+
+**Busy union**:
+The elapsed time covered by at least one activity interval in a case.
+
+**Idle time**:
+The case's elapsed cycle time outside the union of its observed activity intervals.
+
+**Resource concurrency**:
+The maximum number of simultaneously observed positive-duration activities attributed to a resource.

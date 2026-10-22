@@ -1,4 +1,4 @@
-name: Check build test
+name: MoonProcessLens check build test
 
 on:
   push:
@@ -39,13 +39,21 @@ jobs:
           git diff --exit-code
       - name: Runnable workflows
         run: |
+          moon run --target native --deny-warn examples/procurement
+          moon run --target native --deny-warn examples/support
+          moon run --target native --deny-warn examples/pipeline
+          moon run --target native --deny-warn examples/repairs
           moon run --target native --deny-warn examples/security
           moon run --target native --deny-warn examples/orders
           moon run --target native --deny-warn examples/equipment
           moon run --target native --deny-warn examples/funnel
       - name: CLI workflows
         run: |
-          moon run --target native --deny-warn cmd/mooncep -- validate examples/files/program.json
-          moon run --target native --deny-warn cmd/mooncep -- run examples/files/program.json examples/files/events.ndjson
+          moon run --target native --deny-warn cmd/processlens -- analyze examples/files/process-log.json
+          moon run --target native --deny-warn cmd/processlens -- align examples/files/process-log.json examples/files/reference-paths.json
+          moon run --target native --deny-warn cmd/sequence -- validate examples/files/program.json
+          moon run --target native --deny-warn cmd/sequence -- run examples/files/program.json examples/files/events.ndjson
       - name: Benchmark smoke
-        run: moon run --target native --release --deny-warn examples/performance
+        run: |
+          moon run --target native --release --deny-warn examples/process_scale
+          moon run --target native --release --deny-warn examples/performance

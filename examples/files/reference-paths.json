@@ -1,0 +1,1 @@
+{"schema_version":1,"paths":[{"name":"approved-order","activities":["create","approve","ship"]}],"costs":{"unexpected":1,"missing":2}}

@@ -1,84 +1,48 @@
-# Event and pattern semantics
+# Process semantics and limits
 
-An Event has a nonempty ID, key, kind, nonnegative Int64 event time, and named
-scalar fields. IDs are metadata, not deduplication keys. Two successful pushes
-of equal events are distinct occurrences. Integer and Decimal are different
-types; integers are never coerced to Double for comparisons.
+LogEvent IDs must be globally unique within a log. Labels are nonempty, bounded
+to 256 UTF-16 units and exclude ASCII controls. All intervals satisfy
+`0 <= started <= completed <= 9007199254740991`. Units are caller-selected and
+must be consistent. Zero-duration events remain in paths but consume no time.
 
-## Ordering and windows
+EventLog sorts case IDs lexically, and each case by start, completion, then original
+input occurrence. It accepts unordered input. Equal-time order is a documented
+convention, not proof of causal order. Default limits are 100,000 events, 10,000
+cases and 4,096 events/case; configurable maxima are 1,000,000, 100,000 and 10,000.
+An empty EventLog contains no cases; CaseTrace.new can represent an explicit empty case.
 
-An engine begins with watermark -1. Push only buffers an immutable owned event.
-Advance(W) stages a transaction, processes buffered observations in increasing
-`(time, successful push ordinal)` order, closes deadlines, then commits all state.
-After success, any time <= W is late. A failed call commits neither popped input,
-new captures, ordinals, watermark nor partial results.
+Discovery counts occurrences and distinct-case coverage separately. Each nonempty
+trace contributes one start and one end. Loops and repeated edges remain visible;
+variants use exact sequences, with frequency descending then length-prefixed lexical
+identity order. Graph results describe this ordering; they infer neither causality,
+parallel gateways nor an executable workflow. Minimum-frequency filtering returns
+edges only; all observed nodes remain in the original map.
 
-Each match belongs to one key. Its global window is
-`[first_captured_time, first_captured_time + within]`. A positive event at the
-deadline is eligible. All observations at one timestamp are handled before
-deadline expiry at that timestamp. Watermarks are caller assertions about event
-completeness, not inferred from the largest timestamp or the wall clock.
+Alignment minimizes missing-reference and unexpected-observation costs over all
+given finite reference paths. Costs are positive integers <=1,000. There is no
+substitution move: changing an activity requires a missing and an unexpected move.
+The selected path minimizes absolute cost; equal-cost paths follow caller order.
+Backtracking ties prefer synchronous, unexpected, then missing. Fitness is
+`1 - cost / (observed_length*unexpected + model_length*missing)`; empty/empty is 1.
+Fitness is relative to the selected reference, not a calibrated compliance score.
+Loops must be explicitly represented in reference paths. This is trace-to-trace
+alignment, not full Petri-net/BPMN conformance. Max 128 paths, 4,096 labels/path;
+the cell budget counts all candidate grids, including rejected reference paths.
+Whole-log alignment preflights the cumulative budget before computing results.
 
-Supported event times end at MAX_EVENT_TIME=9007199254740991. Windows are 1 through
-MAX_WINDOW=31536000000. FINAL_WATERMARK=9007230790740991 reaches every possible
-deadline; Engine.finish uses it and is idempotent in emitted results.
+Case cycle time spans earliest start to latest completion. Busy union merges all
+case intervals; idle = cycle - union. Service work sums interval durations as Double
+and may exceed elapsed time; it is approximate for very large totals. Durations,
+union and idle use exact Int64. Handoff gaps compare adjacent events and clamp
+overlap to zero while counting overlapping pairs separately; this descriptive gap
+can differ from whole-case idle if an earlier activity is still running.
 
-## Stages and contiguity
+Resource concurrency uses half-open positive intervals `[start,end)`, processing
+ends before starts at equal timestamps. Missing resources are omitted. Without
+availability calendars/capacity there is no claim of resource utilization. Duration
+median/p95 use nearest-rank order statistics, and empty summaries contain null.
+Reported means are Double. Concurrency and rework describe observations, not causes.
 
-A pattern has 1..32 uniquely named stages, at most 128 captured events in total,
-and a mandatory first stage. Each stage has `0 <= min <= max <= 32`, with max>=1.
-Optional means min=0. There are no empty overall matches.
-
-For each branch waiting for the next occurrence of a stage:
-
-| Mode | Matching input | Nonmatching input |
-| --- | --- | --- |
-| Strict | consume | kill branch |
-| SkipNext | consume the first accepted occurrence | retain branch |
-| SkipAny | branch into consume and retain | retain branch |
-
-The same mode applies when entering a stage and when repeating it. Once min is
-met, the branch can proceed to the next stage; if below max it can also continue
-the current stage. Optional suffixes are expanded without reusing the current
-event. A single occurrence is captured at most once in one assignment.
-
-CaptureCompare reads the last event of an earlier named capture. Empty optional
-captures have count zero and no field value. Missing fields and incompatible
-types compare false even under NotEqual; Not then applies ordinary Boolean
-negation. Empty All is true and empty Any is false. Every AST branch is validated,
-including branches that would short circuit during evaluation.
-
-## Exclusion and absence
-
-Stage.forbidden is tested before its positive condition on every event observed
-while that branch awaits the stage or another repetition. A forbidden event
-cancels that branch, even if it also satisfies the positive condition. The same
-event may still start a different branch. This is an explicit exclusion guard,
-not a claim of equivalence to Flink's notFollowedBy.
-
-Pattern.absence starts observing after the complete positive sequence. It rejects
-any later occurrence satisfying the absence predicate through the inclusive
-global deadline. Only a watermark proving the deadline closed confirms the
-absence match. Its ended time is the deadline; last_event_time remains the last
-positive capture. A forbidden observation at the exact deadline cancels absence.
-
-Timeouts report expired incomplete positive branches. They are diagnostic
-prefixes, not a claim that an entity's entire process failed. One entity can have
-both a completed match and other timed-out branches. Cancelled absence branches
-do not become successful matches or positive timeouts.
-
-## Match selection
-
-Candidates completing on one occurrence are sorted by start time, first ordinal,
-capture sizes and capture ordinals after pattern/key ordering. Absence candidates
-also sort by deadline. Duplicate assignments are removed before selection.
-
-- NoSkip retains all assignments.
-- SkipToNextStart selects one and removes alternatives with its exact start occurrence.
-- SkipPastLast selects one and removes starts at or before its last positive occurrence.
-
-Policies are isolated by pattern and key. Selected results, rather than discarded
-candidates, consume the output quota. Candidate storage has a separate bound
-using active_states. Result identities are stable within the same input occurrence
-order and pattern definition; they are not cryptographic hashes or globally
-unique IDs across independent sessions.
+The library does not execute business actions, discover a sound Petri net, parse XES
+or OCEL standards, normalize timezone/calendar conventions, infer missing lifecycle
+pairs, or provide distributed/online incremental processing.

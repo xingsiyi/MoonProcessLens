@@ -4,9 +4,10 @@ Use MoonBit's standard formatter and generated interfaces. Keep public contracts
 in docs/semantics.md and root CONTEXT.md consistent with behavior. Record only
 substantial architectural trade-offs in docs/adr/.
 
-Changes to ordering, selection, expiry or ownership need regression tests against
-the affected public interface. Extend the independent exhaustive oracle when a
-new sequence construct can be modeled independently. Keep synthetic fixtures
+Changes to ordering, alignment costs, interval union, resource sweeps or ownership
+need regression tests against the affected public interface. Extend independent
+subsequence and integer-slot oracles when the model changes. The optional sequence
+package also retains its own independent assignment oracle. Keep synthetic fixtures
 small and document the source/license of any imported fixture.
 
 Run check/build/test for all four targets with --deny-warn, moon fmt --check,
@@ -16,8 +17,9 @@ When the language changes, update implementation and tests together.
 
 Use GitHub Issues for bug reports and specifications. Default triage labels are
 needs-triage, needs-info, ready-for-agent, ready-for-human and wontfix. Include a
-minimal event sequence, pattern, watermarks, expected captures and toolchain
-version. Never upload private production events to illustrate a bug.
+minimal case log, reference path, expected edit evidence/time metrics and toolchain
+version. For sequence-package bugs also provide patterns and watermarks. Never
+upload private production events to illustrate a bug.
 
 Competition proposals, reviews, AI process reports and private measurement logs
 belong outside the project checkout and must not be staged. Preserve existing

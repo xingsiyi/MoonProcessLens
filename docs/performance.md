@@ -1,51 +1,30 @@
-# Resource and complexity model
+# Complexity and resource model
 
-Let B be buffered events, S active branches, K active entity keys, P patterns,
-N events released by one advance, Q temporary match candidates and M selected
-outputs. Let F be the cost of a predicate evaluation including field lookup and
-text comparison; let L cover copied capture metadata, bounded by 128 events and
-32 stages per assignment.
+Let N be events, C cases, L a case length, A distinct activities, E distinct
+direct-follow edges, and R reference paths with lengths M_r.
 
-- Push is O(log B) heap work and stores one event reference.
-- Advance starts with O(B+S) transaction copies/index construction. Only the
-  current key's branches are visited for one input event, at roughly
-  O((S_key+P)F + S_key L), plus heap operations and state deduplication.
-- A versioned deadline heap expires due partitions without scanning every key
-  for every event. Updating a key scans its branches to find its next deadline.
-  Stale heap entries are discarded by generation. The temporary heap is bounded
-  by initial keys and per-input updates within the call.
-- Candidate sorting costs O(Q log Q). Skip policies can additionally compare
-  candidates/states against prior selected outputs; worst-case selection is
-  quadratic in these bounded populations. NoSkip bypasses that scan.
-- Final result sorting is O(M log M); key-order materialization is O(K log K).
-- State memory includes O(B+S L), transaction copies, candidate/output captures,
-  and deadline entries. Shared immutable Events avoid copying business fields
-  for each transition, but capture arrays still carry a real per-branch cost.
+| Operation | Time | Additional space |
+| --- | --- | --- |
+| Log reconstruction | O(N log N + C log C) | O(N+C) |
+| Discovery | Expected O(N + A log A + E log E + variant sorting) | O(N+A+E+C) |
+| Case interval union | O(L) on reconstructed order | O(1) |
+| Full performance report | O(N log N + C log C), including distributions and resource sweeps | O(N+C+A+E) |
+| Trace alignment | O(sum_r (L+1)(M_r+1)) | Maximum grid plus retained result moves |
+| Whole-log alignment | Sum of trace grids, preflight-bounded | Returned moves plus largest candidate grid |
 
-SkipAny intentionally enumerates alternative subsequences; their number can be
-exponential in input length. Finite repetition and window bounds do not make
-that output size polynomial. Resource errors preserve the prior committed state.
-Budgets are not a hard CPU-time or allocated-byte sandbox. Predicate/text costs,
-sorting and host overhead still matter; choose limits for the actual workload.
+Discovery's length-prefixed string identities encode complete sequences; key creation,
+hashing and variant tie sorting also cost their string lengths. Labels are bounded,
+but this is not a claim of constant-cost arbitrary-size string operations. Variant
+sorting may compare full trace identities. Map operations are expected hash costs.
 
-Default maxima per engine are 4096 buffered events, 8192 active states, 1024 keys,
-4096 selected outputs and 1,000,000 charged work units per advance. Work units
-count explicit recognition/expiry bookkeeping. Condition AST and field/text
-limits bound individual operations separately. Candidate storage uses the state
-quota; discarded candidates do not consume the selected-output quota.
+Alignment defaults to 1,000,000 total grid cells, configurable up to 20,000,000.
+Preflight uses Int64 before any grid allocation; grid indices and costs fit Int32
+under the model limits. A grid stores Int32 costs (about 4 bytes/cell plus runtime
+array overhead). Candidates are sequential; garbage collection may temporarily retain
+more than one candidate allocation, so the cumulative cell cap also bounds allocated
+grid storage for an operation. No timeout/CPU-byte budget or constant-memory claim.
 
-Session journals add O(J) retained command history. Persistent import replays it
-and enforces a total restore-work limit. Monitor commits new journal suffixes
-instead of copying the complete history on each chunk; staging still clones the
-current bounded recognition state for transaction isolation.
-
-The benchmark `moon run --target native --release examples/performance` processes
-100,000 events in 500 independent-key pairs per batch, yielding 50,000 matches.
-It asserts the output and prints elapsed milliseconds and charged work. It is a
-reproducible workload, not a general throughput guarantee or a comparison with
-Flink. Small combinatorial patterns can cost far more than this fixed sequence.
-
-A shared capture-buffer representation or indexed after-match selection could
-reduce copies and skip scans. They add reference-lifetime and indexing invariants;
-retain the simpler bounded implementation until measurements of a real consumer
-show those costs dominate.
+Reports materialize complete bounded logs and distributions. This is an embedded
+batch library for bounded inputs, not a billion-event streaming analytics service.
+Optimize only after workload measurements: histogram approximations would change
+quantile semantics, and compressed DP reconstruction would complicate evidence ties.

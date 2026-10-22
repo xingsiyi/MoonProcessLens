@@ -1,8 +1,8 @@
 import {
-  "local/mooncep" @cep,
-  "moonbitlang/core/env",
+  "xingsiyi/processlens" @lens,
   "moonbitlang/x/fs",
   "moonbitlang/x/sys",
+  "moonbitlang/core/env",
 }
 
 pkgtype(kind: "executable")

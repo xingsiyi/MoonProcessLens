@@ -30,6 +30,7 @@ def inspect():
     if leaked:
         raise ValueError("tracked local material/build output: " + ", ".join(leaked))
     production = tests = examples = cli = 0
+    production_by_package = {}
     for name in tracked:
         if not name.endswith(".mbt"):
             continue
@@ -42,6 +43,8 @@ def inspect():
             cli += count
         else:
             production += count
+            package = str(Path(name).parent).replace("\\", "/")
+            production_by_package[package] = production_by_package.get(package, 0) + count
     commits = int(git("rev-list", "--count", "HEAD"))
     if production <= 4000:
         raise ValueError(f"production MoonBit code must exceed 4000 lines; got {production}")
@@ -58,7 +61,8 @@ def inspect():
     historical_leaks = sorted({name for name in history_paths if forbidden.search(name)})
     if historical_leaks:
         raise ValueError("local material/build output remains in Git history: " + ", ".join(historical_leaks))
-    return {"production_moonbit_lines": production, "test_lines": tests,
+    return {"production_moonbit_lines": production,
+            "production_by_package": production_by_package, "test_lines": tests,
             "example_lines": examples, "cli_lines": cli,
             "commits": commits, "tracked_local_materials": leaked,
             "count_definition": "nonblank, noncomment physical .mbt lines; excludes generated interfaces"}

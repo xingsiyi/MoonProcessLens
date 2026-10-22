@@ -1,623 +1,193 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "local/mooncep"
+package "xingsiyi/processlens"
 
 import {
   "moonbitlang/core/debug",
 }
 
 // Values
-pub const FINAL_WATERMARK : Int64 = 9007230790740991
+pub fn alignment_to_json(TraceAlignment) -> Json
 
-pub const MAX_CAPTURED_EVENTS : Int32 = 128
+pub fn log_to_json(EventLog) -> Json
 
-pub const MAX_CONDITION_DEPTH : Int32 = 32
+pub fn parse_alignment_spec(String) -> AlignmentSpec raise ProcessError
 
-pub const MAX_CONDITION_NODES : Int32 = 512
+pub fn parse_log(String) -> EventLog raise ProcessError
 
-pub const MAX_EVENT_FIELDS : Int32 = 128
+pub fn performance_to_json(PerformanceReport) -> Json
 
-pub const MAX_EVENT_TIME : Int64 = 9007199254740991
-
-pub const MAX_PATTERNS : Int32 = 64
-
-pub const MAX_STAGES : Int32 = 32
-
-pub const MAX_STAGE_REPETITIONS : Int32 = 32
-
-pub const MAX_VALUE_TEXT_UNITS : Int32 = 4096
-
-pub const MAX_WINDOW : Int64 = 31536000000
-
-pub const MAX_WIRE_TEXT_UNITS : Int32 = 1048576
-
-pub fn alert_record_to_json(AlertRecord) -> Json raise CepError
-
-pub fn batch_to_json(Batch) -> Json
-
-pub fn checked_format_event(Event) -> String raise CepError
-
-pub fn command_chunks(String, max_units? : Int32) -> Iter[StringView] raise CepError
-
-pub fn command_from_json(Json) -> StreamInput raise CepError
-
-pub fn command_to_json(StreamInput) -> Json
-
-pub fn condition_from_json(Json) -> Condition raise CepError
-
-pub fn condition_to_json(Condition) -> Json raise CepError
-
-pub fn evaluation_to_json(Evaluation) -> Json
-
-pub fn event_from_json(Json) -> Event raise CepError
-
-pub fn event_to_json(Event) -> Json
-
-pub fn format_command(StreamInput) -> String raise CepError
-
-pub fn format_condition(Condition) -> String raise CepError
-
-pub fn format_event(Event) -> String
-
-pub fn format_pattern(Pattern) -> String raise CepError
-
-pub fn format_program(Program) -> String raise CepError
-
-pub fn format_session(Session) -> String raise CepError
-
-pub fn inspection_to_json(Inspection) -> Json
-
-pub fn limits_from_json(Json) -> Limits raise CepError
-
-pub fn limits_to_json(Limits) -> Json
-
-pub fn match_to_json(Match) -> Json
-
-pub fn metrics_to_json(DetectionMetrics) -> Json
-
-pub fn monitor_stats_to_json(MonitorStats) -> Json
-
-pub fn parse_command(String) -> StreamInput raise CepError
-
-pub fn parse_condition(String) -> Condition raise CepError
-
-pub fn parse_event(String) -> Event raise CepError
-
-pub fn parse_pattern(String) -> Pattern raise CepError
-
-pub fn parse_program(String) -> Program raise CepError
-
-pub fn parse_session(String, max_work? : Int32) -> Session raise CepError
-
-pub fn pattern_from_json(Json) -> Pattern raise CepError
-
-pub fn pattern_to_json(Pattern) -> Json
-
-pub fn program_from_json(Json) -> Program raise CepError
-
-pub fn program_to_json(Program) -> Json
-
-pub fn projected_record_to_json(Array[Field]) -> Json raise CepError
-
-pub fn projection_from_json(Pattern, Json) -> ProjectionPlan raise CepError
-
-pub fn projection_to_json(ProjectionPlan) -> Json
-
-pub fn replay(Array[Pattern], Array[StreamInput], limits? : Limits, max_commands? : Int32, max_outputs? : Int32) -> Array[Batch] raise CepError
-
-pub fn session_from_json(Json, max_work? : Int32) -> Session raise CepError
-
-pub fn session_to_json(Session) -> Json
-
-pub fn stage_diagnostics_to_json(Array[StageDiagnostic]) -> Json
-
-pub fn timeout_to_json(Timeout) -> Json
-
-pub fn value_from_json(Json) -> Value raise CepError
-
-pub fn value_to_json(Value) -> Json raise CepError
+pub fn process_map_to_json(ProcessMap) -> Json
 
 // Errors
-pub(all) suberror CepError {
-  Invalid(path~ : String, reason~ : String)
-  Resource(resource~ : String, limit~ : Int32)
-  LateEvent(time~ : Int64, watermark~ : Int64)
-  WatermarkRegression(previous~ : Int64, requested~ : Int64)
+pub(all) suberror ProcessError {
+  InvalidLog(path~ : String, reason~ : String)
+  Capacity(resource~ : String, limit~ : Int32)
 } derive(@debug.Debug)
-pub fn CepError::message(Self) -> String
-pub fn CepError::to_repr(Self) -> @debug.Repr
+pub fn ProcessError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
-pub(all) enum AfterMatch {
-  NoSkip
-  SkipToNextStart
-  SkipPastLast
+pub(all) struct ActivityNode {
+  activity : String
+  occurrences : Int32
+  cases : Int32
+  starts : Int32
+  ends : Int32
 } derive(Eq, @debug.Debug)
-pub fn AfterMatch::equal(Self, Self) -> Bool
-pub fn AfterMatch::not_equal(Self, Self) -> Bool
-pub fn AfterMatch::to_repr(Self) -> @debug.Repr
+pub fn ActivityNode::equal(Self, Self) -> Bool
+pub fn ActivityNode::not_equal(Self, Self) -> Bool
+pub fn ActivityNode::to_repr(Self) -> @debug.Repr
 
-pub(all) struct AlertRecord {
-  pattern : String
-  key : String
-  identity : String
-  fields : Array[Field]
+pub(all) struct ActivityPerformance {
+  activity : String
+  service : DurationDistribution
 }
 
-pub struct Batch {
-  matches : Array[Match]
-  timeouts : Array[Timeout]
-  processed : Int32
-  work : Int32
+pub struct AlignmentCosts {
+  unexpected : Int32
+  missing : Int32
 }
-pub fn Batch::matches(Self) -> Array[Match]
-pub fn Batch::processed(Self) -> Int32
-pub fn Batch::timeouts(Self) -> Array[Timeout]
-pub fn Batch::work(Self) -> Int32
+pub fn AlignmentCosts::new(unexpected? : Int32, missing? : Int32) -> Self raise ProcessError
 
-type Branch
-
-pub(all) enum BranchingRisk {
-  FixedSequence
-  BoundedRepetition
-  CombinatorialSelection
+pub(all) enum AlignmentMove {
+  Synchronous(event_id~ : String, activity~ : String)
+  Unexpected(event_id~ : String, activity~ : String)
+  Missing(activity~ : String)
 } derive(Eq, @debug.Debug)
-pub fn BranchingRisk::equal(Self, Self) -> Bool
-pub fn BranchingRisk::not_equal(Self, Self) -> Bool
-pub fn BranchingRisk::to_repr(Self) -> @debug.Repr
+pub fn AlignmentMove::equal(Self, Self) -> Bool
+pub fn AlignmentMove::not_equal(Self, Self) -> Bool
+pub fn AlignmentMove::to_repr(Self) -> @debug.Repr
 
-pub(all) struct Capture {
-  name : String
-  events : Array[Event]
-} derive(Eq, @debug.Debug)
-pub fn Capture::equal(Self, Self) -> Bool
-pub fn Capture::not_equal(Self, Self) -> Bool
-pub fn Capture::to_repr(Self) -> @debug.Repr
-
-pub struct Checkpoint {
-  state : Engine
+pub struct AlignmentSpec {
+  paths : Array[ReferencePath]
+  costs : AlignmentCosts
 }
-pub fn Checkpoint::active_states(Self) -> Int32
-pub fn Checkpoint::buffered(Self) -> Int32
-pub fn Checkpoint::restore(Self) -> Engine
-pub fn Checkpoint::restore_with_limits(Self, Limits) -> Engine raise CepError
-pub fn Checkpoint::watermark(Self) -> Int64
+pub fn AlignmentSpec::costs(Self) -> AlignmentCosts
+pub fn AlignmentSpec::paths(Self) -> Array[ReferencePath]
 
-pub(all) struct Column {
-  name : String
-  projection : Projection
+pub(all) struct CasePerformance {
+  case_id : String
+  events : Int32
+  cycle_time : Int64
+  busy_union : Int64
+  idle_time : Int64
+  service_work : Double
+  overlapping_starts : Int32
 }
 
-pub struct CommandReader {
-  mut partial : String
-  mut line : Int32
-  mut closed : Bool
-  max_line : Int32
-  max_commands : Int32
-}
-pub fn CommandReader::feed(Self, String) -> Array[StreamInput] raise CepError
-pub fn CommandReader::finish(Self) -> Array[StreamInput] raise CepError
-pub fn CommandReader::fork(Self) -> Self
-pub fn CommandReader::is_finished(Self) -> Bool
-pub fn CommandReader::line(Self) -> Int32
-pub fn CommandReader::new(max_line? : Int32, max_commands? : Int32) -> Self raise CepError
-pub fn CommandReader::pending_units(Self) -> Int32
-
-pub(all) enum Comparison {
-  Equal
-  NotEqual
-  Less
-  LessEqual
-  Greater
-  GreaterEqual
-} derive(Eq, @debug.Debug)
-pub fn Comparison::equal(Self, Self) -> Bool
-pub fn Comparison::not_equal(Self, Self) -> Bool
-pub fn Comparison::to_repr(Self) -> @debug.Repr
-
-pub(all) enum Condition {
-  Always
-  Kind(String)
-  Has(String)
-  Compare(String, Comparison, Value)
-  FieldCompare(String, Comparison, String)
-  CaptureCompare(String, Comparison, String, String)
-  CaptureCount(String, Comparison, Int32)
-  TextPrefix(String, String)
-  TextContains(String, String)
-  All(Array[Condition])
-  Any(Array[Condition])
-  Not(Condition)
-} derive(Eq, @debug.Debug)
-pub fn Condition::equal(Self, Self) -> Bool
-pub fn Condition::evaluate(Self, Event, Array[Capture]) -> Bool raise CepError
-pub fn Condition::explain(Self, Event, captures? : Array[Capture]) -> Evaluation raise CepError
-pub fn Condition::not_equal(Self, Self) -> Bool
-pub fn Condition::to_repr(Self) -> @debug.Repr
-pub fn Condition::validate(Self, Array[String]) -> Unit raise CepError
-
-pub(all) struct ConditionNote {
-  path : String
-  passed : Bool
-  reason : String
-}
-
-pub(all) enum Contiguity {
-  Strict
-  SkipNext
-  SkipAny
-} derive(Eq, @debug.Debug)
-pub fn Contiguity::equal(Self, Self) -> Bool
-pub fn Contiguity::not_equal(Self, Self) -> Bool
-pub fn Contiguity::to_repr(Self) -> @debug.Repr
-
-pub struct DetectionMetrics {
-  mut series : Map[String, DetectionSeries]
-  max_series : Int32
-  by_key : Bool
-  mut batches : Int64
-  mut processed : Int64
-  mut work : Int64
-}
-pub fn DetectionMetrics::batches(Self) -> Int64
-pub fn DetectionMetrics::fork(Self) -> Self
-pub fn DetectionMetrics::new(max_series? : Int32, by_key? : Bool) -> Self raise CepError
-pub fn DetectionMetrics::observe(Self, Batch) -> Unit raise CepError
-pub fn DetectionMetrics::processed(Self) -> Int64
-pub fn DetectionMetrics::reset(Self) -> Unit
-pub fn DetectionMetrics::series(Self) -> Array[DetectionSeries]
-pub fn DetectionMetrics::work(Self) -> Int64
-
-pub(all) struct DetectionSeries {
-  pattern : String
-  key : String?
-  matches : Int64
-  absence_matches : Int64
-  timeouts : Int64
-  shortest_duration : Int64?
-  longest_duration : Int64?
-  mean_duration : Double?
-}
-
-pub struct Engine {
-  patterns : Array[Pattern]
-  limits : Limits
-  mut buffer : Array[Stamped]
-  mut active : Array[Branch]
-  mut watermark : Int64
-  mut ordinal : Int64
-}
-pub fn Engine::active_states(Self) -> Int32
-pub fn Engine::advance_watermark(Self, Int64) -> Batch raise CepError
-pub fn Engine::buffered(Self) -> Int32
-pub fn Engine::checkpoint(Self) -> Checkpoint
-pub fn Engine::finish(Self) -> Batch raise CepError
-pub fn Engine::fork(Self) -> Self
-pub fn Engine::frontier(Self, key? : String, limit? : Int32) -> Frontier raise CepError
-pub fn Engine::inspect(Self) -> Inspection
-pub fn Engine::is_finished(Self) -> Bool
-pub fn Engine::limits(Self) -> Limits
-pub fn Engine::new(Array[Pattern], limits? : Limits) -> Self raise CepError
-pub fn Engine::next_deadline(Self) -> Int64?
-pub fn Engine::next_event_time(Self) -> Int64?
-pub fn Engine::preview(Self, Array[Event], Int64, frontier_limit? : Int32) -> Preview raise CepError
-pub fn Engine::push(Self, Event) -> Int64 raise CepError
-pub fn Engine::push_many(Self, Array[Event]) -> Array[Int64] raise CepError
-pub fn Engine::watermark(Self) -> Int64
-pub fn Engine::with_limits(Self, Limits) -> Self raise CepError
-
-pub struct Evaluation {
-  result : Bool
-  notes : Array[ConditionNote]
-}
-pub fn Evaluation::matched(Self) -> Bool
-pub fn Evaluation::notes(Self) -> Array[ConditionNote]
-
-pub struct Event {
+pub struct CaseTrace {
   id : String
-  key : String
-  time : Int64
-  kind : String
-  fields : Array[Field]
-} derive(Eq, @debug.Debug)
-pub fn Event::equal(Self, Self) -> Bool
-pub fn Event::field(Self, String) -> Value?
-pub fn Event::fields(Self) -> Array[Field]
-pub fn Event::id(Self) -> String
-pub fn Event::key(Self) -> String
-pub fn Event::kind(Self) -> String
-pub fn Event::new(String, String, Int64, String, fields? : Array[Field]) -> Self raise CepError
-pub fn Event::not_equal(Self, Self) -> Bool
-pub fn Event::time(Self) -> Int64
-pub fn Event::to_repr(Self) -> @debug.Repr
-
-pub(all) struct Field {
-  name : String
-  value : Value
-} derive(Eq, @debug.Debug)
-pub fn Field::equal(Self, Self) -> Bool
-pub fn Field::not_equal(Self, Self) -> Bool
-pub fn Field::to_repr(Self) -> @debug.Repr
-
-pub struct Frontier {
-  items : Array[Pending]
-  total : Int32
+  events : Array[LogEvent]
 }
-pub fn Frontier::items(Self) -> Array[Pending]
-pub fn Frontier::total(Self) -> Int32
-pub fn Frontier::truncated(Self) -> Bool
+pub fn CaseTrace::activities(Self) -> Array[String]
+pub fn CaseTrace::align(Self, Array[ReferencePath], costs? : AlignmentCosts, max_cells? : Int32) -> TraceAlignment raise ProcessError
+pub fn CaseTrace::cycle_time(Self) -> Int64
+pub fn CaseTrace::events(Self) -> Array[LogEvent]
+pub fn CaseTrace::id(Self) -> String
+pub fn CaseTrace::new(String, Array[LogEvent]) -> Self raise ProcessError
+pub fn CaseTrace::performance(Self) -> CasePerformance
 
-pub struct Inspection {
-  watermark : Int64
-  occurrence : Int64
-  buffered : Int32
-  active : Int32
-  partitions : Array[PartitionStatus]
-  patterns : Array[PatternStatus]
+pub(all) struct DurationDistribution {
+  count : Int32
+  minimum : Int64?
+  maximum : Int64?
+  median : Int64?
+  p95 : Int64?
+  mean : Double?
 }
-pub fn Inspection::active_states(Self) -> Int32
-pub fn Inspection::buffered(Self) -> Int32
-pub fn Inspection::occurrence(Self) -> Int64
-pub fn Inspection::partitions(Self) -> Array[PartitionStatus]
-pub fn Inspection::patterns(Self) -> Array[PatternStatus]
-pub fn Inspection::watermark(Self) -> Int64
 
-pub(all) struct Limits {
-  buffered_events : Int32
-  active_states : Int32
-  partitions : Int32
-  outputs_per_call : Int32
-  work_per_call : Int32
+pub struct EventLog {
+  traces : Array[CaseTrace]
+  event_count : Int32
+}
+pub fn EventLog::align(Self, Array[ReferencePath], costs? : AlignmentCosts, max_cells? : Int32) -> Array[TraceAlignment] raise ProcessError
+pub fn EventLog::case_count(Self) -> Int32
+pub fn EventLog::discover(Self) -> ProcessMap
+pub fn EventLog::event_count(Self) -> Int32
+pub fn EventLog::new(Array[LogEvent], max_events? : Int32, max_cases? : Int32, max_trace? : Int32) -> Self raise ProcessError
+pub fn EventLog::performance(Self) -> PerformanceReport
+pub fn EventLog::traces(Self) -> Array[CaseTrace]
+
+pub(all) struct FlowEdge {
+  source : String
+  target : String
+  occurrences : Int32
+  cases : Int32
 } derive(Eq, @debug.Debug)
-pub fn Limits::default() -> Self
-pub fn Limits::equal(Self, Self) -> Bool
-pub fn Limits::not_equal(Self, Self) -> Bool
-pub fn Limits::to_repr(Self) -> @debug.Repr
-pub fn Limits::validate(Self) -> Unit raise CepError
+pub fn FlowEdge::equal(Self, Self) -> Bool
+pub fn FlowEdge::not_equal(Self, Self) -> Bool
+pub fn FlowEdge::to_repr(Self) -> @debug.Repr
 
-pub struct Match {
-  pattern : String
-  key : String
-  captures : Array[Capture]
-  occurrences : Array[Int64]
+pub(all) struct HandoffPerformance {
+  source : String
+  target : String
+  positive_gap : DurationDistribution
+  overlapping_pairs : Int32
+}
+
+pub struct LogEvent {
+  id : String
+  case_id : String
+  activity : String
   started : Int64
-  ended : Int64
-  absence : Bool
-}
-pub fn Match::captures(Self) -> Array[Capture]
-pub fn Match::ended(Self) -> Int64
-pub fn Match::events(Self, String) -> Array[Event]
-pub fn Match::identity(Self) -> String
-pub fn Match::is_absence(Self) -> Bool
-pub fn Match::key(Self) -> String
-pub fn Match::last_event_time(Self) -> Int64
-pub fn Match::occurrences(Self) -> Array[Int64]
-pub fn Match::pattern(Self) -> String
-pub fn Match::started(Self) -> Int64
-
-pub struct Monitor {
-  mut reader : CommandReader
-  session : Session
-  mut accepted_events : Int64
-  mut advances : Int64
-  mut matches : Int64
-  mut timeouts : Int64
-  mut work : Int64
-}
-pub fn Monitor::finish_input(Self, close_time? : Bool) -> Array[Batch] raise CepError
-pub fn Monitor::fork(Self) -> Self
-pub fn Monitor::ingest(Self, String) -> Array[Batch] raise CepError
-pub fn Monitor::inspection(Self) -> Inspection
-pub fn Monitor::new(Array[Pattern], limits? : Limits, max_commands? : Int32, max_line? : Int32, commands_per_chunk? : Int32) -> Self raise CepError
-pub fn Monitor::session(Self) -> Session
-pub fn Monitor::stats(Self) -> MonitorStats
-
-pub(all) struct MonitorStats {
-  accepted_events : Int64
-  advances : Int64
-  matches : Int64
-  timeouts : Int64
-  work : Int64
-  buffered_events : Int32
-  active_states : Int32
-  pending_text_units : Int32
-}
-
-pub(all) struct PartitionStatus {
-  key : String
-  buffered : Int32
-  active : Int32
-  earliest_event : Int64?
-  latest_event : Int64?
-  earliest_deadline : Int64?
-}
-
-pub struct Pattern {
-  id : String
-  stages : Array[Stage]
-  within : Int64
-  after_match : AfterMatch
-  absence : Condition?
-}
-pub fn Pattern::absence(Self) -> Condition?
-pub fn Pattern::after_match(Self) -> AfterMatch
-pub fn Pattern::analysis(Self) -> PatternAnalysis
-pub fn Pattern::diagnose(Self, Event, captures? : Array[Capture]) -> Array[StageDiagnostic] raise CepError
-pub fn Pattern::id(Self) -> String
-pub fn Pattern::new(String, Array[Stage], Int64, after_match? : AfterMatch, absence? : Condition) -> Self raise CepError
-pub fn Pattern::stage(Self, String) -> Stage?
-pub fn Pattern::stage_at(Self, Int32) -> Stage?
-pub fn Pattern::stage_names(Self) -> Array[String]
-pub fn Pattern::stages(Self) -> Array[Stage]
-pub fn Pattern::within(Self) -> Int64
-
-pub(all) struct PatternAnalysis {
-  minimum_captures : Int32
-  maximum_captures : Int32
-  nullable_stages : Int32
-  variable_stages : Int32
-  repeated_stages : Int32
-  strict_stages : Int32
-  skip_any_stages : Int32
-  guarded_stages : Int32
-  has_absence : Bool
-  branching_risk : BranchingRisk
+  completed : Int64
+  resource : String?
 } derive(Eq, @debug.Debug)
-pub fn PatternAnalysis::equal(Self, Self) -> Bool
-pub fn PatternAnalysis::not_equal(Self, Self) -> Bool
-pub fn PatternAnalysis::to_repr(Self) -> @debug.Repr
+pub fn LogEvent::activity(Self) -> String
+pub fn LogEvent::case_id(Self) -> String
+pub fn LogEvent::completed(Self) -> Int64
+pub fn LogEvent::equal(Self, Self) -> Bool
+pub fn LogEvent::id(Self) -> String
+pub fn LogEvent::new(String, String, String, Int64, Int64, resource? : String?) -> Self raise ProcessError
+pub fn LogEvent::not_equal(Self, Self) -> Bool
+pub fn LogEvent::resource(Self) -> String?
+pub fn LogEvent::started(Self) -> Int64
+pub fn LogEvent::to_repr(Self) -> @debug.Repr
 
-pub(all) struct PatternStatus {
-  pattern : String
-  active : Int32
-  awaiting_absence : Int32
-  earliest_deadline : Int64?
+pub(all) struct PerformanceReport {
+  cases : Array[CasePerformance]
+  activities : Array[ActivityPerformance]
+  handoffs : Array[HandoffPerformance]
+  resources : Array[ResourcePerformance]
+  cycle_times : DurationDistribution
 }
 
-pub(all) struct Pending {
-  pattern : String
-  key : String
-  stage : String?
-  matched_here : Int32
-  minimum_more : Int32
-  maximum_more : Int32
-  deadline : Int64
-  awaiting_absence : Bool
-  captures : Array[Capture]
+pub(all) struct ProcessMap {
+  nodes : Array[ActivityNode]
+  edges : Array[FlowEdge]
+  variants : Array[ProcessVariant]
+  cases : Int32
+  events : Int32
+}
+pub fn ProcessMap::frequent_edges(Self, Int32) -> Array[FlowEdge] raise ProcessError
+
+pub(all) struct ProcessVariant {
+  activities : Array[String]
+  cases : Array[String]
 }
 
-pub struct Preview {
-  batch : Batch
-  inspection : Inspection
-  frontier : Frontier
-}
-pub fn Preview::batch(Self) -> Batch
-pub fn Preview::frontier(Self) -> Frontier
-pub fn Preview::inspection(Self) -> Inspection
-
-pub struct Program {
-  patterns : Array[Pattern]
-  limits : Limits
-  projections : Array[ProjectionPlan]
-}
-pub fn Program::describe(Self) -> Json
-pub fn Program::engine(Self) -> Engine raise CepError
-pub fn Program::limits(Self) -> Limits
-pub fn Program::monitor(Self, max_commands? : Int32) -> Monitor raise CepError
-pub fn Program::new(Array[Pattern], limits? : Limits, projections? : Array[ProjectionPlan]) -> Self raise CepError
-pub fn Program::patterns(Self) -> Array[Pattern]
-pub fn Program::project(Self, Batch) -> Array[AlertRecord] raise CepError
-pub fn Program::projections(Self) -> Array[ProjectionPlan]
-
-pub(all) enum Projection {
-  EntityKey
-  PatternName
-  StartTime
-  EndTime
-  Duration
-  AbsenceMatch
-  CaptureSize(String)
-  FirstField(String, String)
-  LastField(String, String)
-  TotalInteger(String, String)
-  TotalDecimal(String, String)
-  MinimumField(String, String)
-  MaximumField(String, String)
-  AverageDecimal(String, String)
-} derive(Eq, @debug.Debug)
-pub fn Projection::equal(Self, Self) -> Bool
-pub fn Projection::not_equal(Self, Self) -> Bool
-pub fn Projection::to_repr(Self) -> @debug.Repr
-
-pub struct ProjectionPlan {
-  pattern : String
-  columns : Array[Column]
-}
-pub fn ProjectionPlan::apply(Self, Match) -> Array[Field] raise CepError
-pub fn ProjectionPlan::columns(Self) -> Array[Column]
-pub fn ProjectionPlan::new(Pattern, Array[Column]) -> Self raise CepError
-
-pub struct Session {
-  mut engine : Engine
-  mut commands : Array[StreamInput]
-  max_commands : Int32
-}
-pub fn Session::active_states(Self) -> Int32
-pub fn Session::apply(Self, StreamInput) -> Update raise CepError
-pub fn Session::apply_many(Self, Array[StreamInput]) -> Array[Update] raise CepError
-pub fn Session::buffered(Self) -> Int32
-pub fn Session::checkpoint(Self) -> Checkpoint
-pub fn Session::commands(Self) -> Array[StreamInput]
-pub fn Session::finish(Self) -> Batch raise CepError
-pub fn Session::fork(Self) -> Self
-pub fn Session::new(Array[Pattern], limits? : Limits, max_commands? : Int32) -> Self raise CepError
-pub fn Session::watermark(Self) -> Int64
-pub fn Session::with_limits(Self, Limits) -> Self raise CepError
-
-pub struct Stage {
+pub struct ReferencePath {
   name : String
-  condition : Condition
-  min : Int32
-  max : Int32
-  contiguity : Contiguity
-  forbidden : Condition?
+  activities : Array[String]
 }
-pub fn Stage::condition(Self) -> Condition
-pub fn Stage::contiguity(Self) -> Contiguity
-pub fn Stage::forbidden(Self) -> Condition?
-pub fn Stage::is_optional(Self) -> Bool
-pub fn Stage::is_repeated(Self) -> Bool
-pub fn Stage::maximum(Self) -> Int32
-pub fn Stage::minimum(Self) -> Int32
-pub fn Stage::name(Self) -> String
-pub fn Stage::new(String, Condition, min? : Int32, max? : Int32, contiguity? : Contiguity, forbidden? : Condition) -> Self raise CepError
+pub fn ReferencePath::activities(Self) -> Array[String]
+pub fn ReferencePath::name(Self) -> String
+pub fn ReferencePath::new(String, Array[String]) -> Self raise ProcessError
 
-pub(all) struct StageDiagnostic {
-  stage : String
-  positive : Evaluation
-  forbidden : Evaluation?
-  minimum : Int32
-  maximum : Int32
+pub(all) struct ResourcePerformance {
+  resource : String
+  occurrences : Int32
+  service : DurationDistribution
+  maximum_concurrency : Int32
 }
 
-type Stamped
-
-pub(all) enum StreamInput {
-  Observe(Event)
-  Advance(Int64)
-} derive(Eq, @debug.Debug)
-pub fn StreamInput::equal(Self, Self) -> Bool
-pub fn StreamInput::not_equal(Self, Self) -> Bool
-pub fn StreamInput::to_repr(Self) -> @debug.Repr
-
-pub struct Timeout {
-  pattern : String
-  key : String
-  deadline : Int64
-  captures : Array[Capture]
+pub(all) struct TraceAlignment {
+  case_id : String
+  reference : String
+  cost : Int32
+  fitness : Double
+  moves : Array[AlignmentMove]
+  evaluated_cells : Int32
 }
-pub fn Timeout::captures(Self) -> Array[Capture]
-pub fn Timeout::deadline(Self) -> Int64
-pub fn Timeout::key(Self) -> String
-pub fn Timeout::pattern(Self) -> String
-
-pub(all) enum Update {
-  Accepted(Int64)
-  Progress(Batch)
-}
-
-pub(all) enum Value {
-  Text(String)
-  Integer(Int64)
-  Decimal(Double)
-  Boolean(Bool)
-  NullValue
-} derive(Eq, @debug.Debug)
-pub fn Value::compare(Self, Comparison, Self) -> Bool
-pub fn Value::equal(Self, Self) -> Bool
-pub fn Value::not_equal(Self, Self) -> Bool
-pub fn Value::to_repr(Self) -> @debug.Repr
-pub fn Value::type_name(Self) -> String
-pub fn Value::validate(Self) -> Unit raise CepError
 
 // Type aliases
 

@@ -1,4 +1,30 @@
-# Sources and licensing
+# Sources, ecosystem position and licensing
+
+MoonProcessLens has an independent process-log root package: case reconstruction,
+empirical directly-follows discovery, finite-reference weighted edit alignment and
+interval performance analysis. Its code and synthetic fixtures were created with AI
+assistance; no external process-mining source or production dataset was imported.
+The alignment is a direct dynamic program verified against independently enumerated
+common subsequences, not a port of a Petri-net alignment engine.
+
+A 2026-10-22 review of 3,221 official directory entries and selected fixed APIs did
+not identify an equivalent complete process-analysis library within that scope.
+[moonpetri](https://github.com/okMambaOut/moonpetri/tree/e5eb4ed854be19e68dcb4ddb092f8d0bf6be61f5)
+models/fires Petri nets; [moonflowgraph](https://github.com/AlexenderSokolov/moonflowgraph/tree/e2faa7c7105161b561111f0f31e1ef57071b713d)
+plans predefined task DAGs. [moon-loglens](https://github.com/sundaysebasidian-byte/moon-loglens/tree/4603ef7527332002684200ff4a9a88c313f944f4)
+provides general JSONL aggregation, while [moon-tracelens](https://github.com/btlqql/moon-tracelens)
+provides ingestion, timeline and metric comparisons. ProcessLens instead groups
+activity histories into case paths and produces path edits and interval explanations.
+These bounded findings do not establish that all concepts or primitives are new.
+
+## Evolution and optional sequence package
+
+The project continues the local repository previously named MoonCEP. Its detector
+is now in `sequence`; it is retained and identified rather than presented as new
+process-mining code. Root analysis does not import it. Renaming does not erase Git
+history or previously published artifacts. Package/account changes require the owner's
+later instructions. The original detector's source/reference notes follow.
+
 
 MoonCEP's MoonBit implementation and synthetic tests were created for this
 project with AI assistance. It is not a line-by-line port and does not include

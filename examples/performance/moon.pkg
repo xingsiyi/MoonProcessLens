@@ -1,5 +1,5 @@
 import {
-  "local/mooncep" @cep,
+  "xingsiyi/processlens/sequence" @cep,
   "moonbitlang/core/env",
 }
 

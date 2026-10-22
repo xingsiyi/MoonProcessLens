@@ -19,7 +19,7 @@ fn print_batch(program : @cep.Program, batch : @cep.Batch) -> Unit raise {
 fn run(args : Array[String]) -> Unit raise {
   if args.length() < 3 {
     println(
-      "usage: mooncep validate CONFIG | run CONFIG COMMANDS.ndjson | restore SESSION.json COMMANDS.ndjson | inspect SESSION.json",
+      "usage: processlens-sequence validate CONFIG | run CONFIG COMMANDS.ndjson | restore SESSION.json COMMANDS.ndjson | inspect SESSION.json",
     )
     @sys.exit(2)
     return

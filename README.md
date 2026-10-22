@@ -1,119 +1,78 @@
-# MoonCEP
+# MoonProcessLens
 
-MoonCEP is an embeddable **complex event pattern detector** written in MoonBit.
-It recognizes named sequences in keyed, out-of-order business events and waits
-for caller-provided watermarks before confirming time-bounded absence.
+MoonProcessLens 是使用 MoonBit 实现的**过程日志分析与流程挖掘基础库**。它从订单、工单、审批、生产及流水线中已经发生的活动记录，发现实际处理路径，解释与参考流程的偏差，并定位等待、返工和资源并发压力。
 
-MoonCEP 面向需要跨多条事件识别业务过程的开发者：账号异常登录、订单超时未支付、
-设备告警与恢复、用户行为漏斗。核心输入是已经发生的事件，输出是命名捕获及事件证据。
-它不运行外部业务动作，也不要求部署流计算集群。
+输入是带 `case_id / activity / started / completed / resource` 的区间日志；输出是可供报表、可视化及业务工具使用的流程关系图、路径变体、对齐证据和耗时报告。核心分析不依赖外部服务或流计算集群。
 
-## Local development
+## 四项独立能力
 
-The working module is `local/mooncep` and is marked private for local verification.
-The release namespace and repository will be supplied by the project owner.
-`local` is a temporary development prefix, not a publisher account.
+| 能力 | 可复用价值 |
+| --- | --- |
+| 日志重建与 JSON 互操作 | 将乱序业务区间按实例重建，验证身份、时间与容量，便于应用或现有协议库接入。 |
+| 流程关系和变体发现 | 区分活动次数与实例覆盖，识别直接相邻关系、自循环、起止节点和完整处理路径。 |
+| 最优加权轨迹对齐 | 对有限参考路径解释额外活动和缺失步骤，输出活动身份与逐步证据，支持不同偏差成本。 |
+| 区间性能和资源诊断 | 区分服务工作量、并发区间覆盖和真正空闲，分析分位数、环节间隔及资源并发峰值。 |
 
-Packages inside this module import the library using:
+## 本地使用
+
+模块为 `xingsiyi/processlens`。GitHub 与 Mooncakes 发布账号均为 `xingsiyi`；项目继续使用原本地文件夹，文件夹名称不代表产品名称。
 
 ```moonbit
-import {
-  "local/mooncep" @cep,
-}
+import { "xingsiyi/processlens" @lens }
 ```
-
-The library imports only `moonbitlang/core`. The module additionally depends on
-`moonbitlang/x@0.4.49` for the file CLI. Tested with moonc 0.10.16 on wasm,
-wasm-gc, JavaScript and native; CI checks and builds all four targets.
-
-## Recognize a sequence
 
 ```moonbit
 fn main raise {
-  let pattern = @cep.Pattern::new("login-signal", [
-    @cep.Stage::new("failures", @cep.Kind("failed"), min=3, max=3),
-    @cep.Stage::new("success", @cep.Kind("success")),
-  ], 300000L, after_match=@cep.SkipPastLast)
-  let engine = @cep.Engine::new([pattern])
-  for (id, kind, time) in [
-    ("f1", "failed", 1000L), ("f2", "failed", 2000L),
-    ("f3", "failed", 3000L), ("s1", "success", 4000L),
-  ] {
-    ignore(engine.push(@cep.Event::new(id, "user/7", time, kind)))
-  }
-  let batch = engine.advance_watermark(4000L)
-  assert_eq(batch.matches().length(), 1)
-  println(@cep.match_to_json(batch.matches()[0]).stringify())
+  let log = @lens.EventLog::new([
+    @lens.LogEvent::new("o1", "order/7", "create", 0L, 1L),
+    @lens.LogEvent::new("o2", "order/7", "ship", 5L, 6L),
+  ])
+  let model = @lens.ReferencePath::new("approved-order", ["create", "approve", "ship"])
+  let result = log.align([model])
+  assert_eq(result[0].cost, 1)
+  println(@lens.alignment_to_json(result[0]).stringify())
+  println(@lens.process_map_to_json(log.discover()).stringify())
+  println(@lens.performance_to_json(log.performance()).stringify())
 }
 ```
 
-All timestamps use caller-chosen consistent integer units. Examples use
-milliseconds. A watermark `W` closes **all event times <= W**. Events at the
-same timestamp follow successful input occurrence order; an event at an already
-closed timestamp is rejected. `finish()` closes every supported deadline.
+生产根包仅使用 MoonBit 标准库。文件 CLI 的 IO 使用 `moonbitlang/x@0.4.49`；核心分析支持 wasm、wasm-gc、JavaScript、native，开发工具链为 moonc 0.10.16。
 
-## Capabilities and boundaries
+## 完整业务场景
 
-- Named stages, finite `min..max` repetitions, optional stages (`min=0`).
-- Strict, skip-next and skip-any contiguity; three explicit after-match policies.
-- Typed field predicates, Boolean combinations and earlier-capture comparisons.
-- Stage exclusion predicates and trailing absence through a closed deadline.
-- Key isolation, event-time heap, deterministic capture evidence and timeouts.
-- Atomic limits on buffered events, states, keys, selected outputs and work units.
-- Detached checkpoints, versioned JSON session journals, bounded replay and preview.
-- Incremental NDJSON framing, transactional stream ingestion, typed alert projections,
-  partial-match diagnostics and bounded detection telemetry.
-
-Version 1 has finite patterns and synchronous, single-owner state. It does not
-provide distributed execution, unbounded repetition, pattern alternation/groups,
-greedy matching, event corrections/retractions, cross-key joins, arbitrary user
-callbacks, automatic watermarks, queue connectors or external-sink exactly-once
-delivery. It defines its own semantics and does not claim FlinkCEP compatibility.
-See [semantics](docs/semantics.md), [API guide](docs/api.md) and
-[resource/complexity model](docs/performance.md).
-
-## Run complete examples
-
-From a source checkout, run `moon update`, then:
-
-```sh
-moon run --target native examples/security
-moon run --target native examples/orders
-moon run --target native examples/equipment
-moon run --target native examples/funnel
-moon run --target native --release examples/performance
-```
-
-| Example | Complete input-to-output scenario |
+| 示例 | 输入、分析和可核验结果 |
 | --- | --- |
-| Security | Three failed logins followed by success for the same account produce captured evidence. |
-| Orders | A persisted session is restored; unpaid orders are confirmed after their deadline, while payment at the deadline cancels absence. |
-| Equipment | Out-of-order alarms, a rising field comparison and recovery produce a typed operational record. |
-| Funnel | An optional coupon stage and multiple purchases demonstrate preview, branching and result telemetry. |
-
-The synthetic fixtures were created for this repository; no production data is included.
-
-## File CLI
+| procurement | 两笔乱序订单，发现正常和跳过审批两种路径；对齐明确指出缺失审批，并报告处理空闲。 |
+| support | 工单反复调查形成自循环；对齐给出多余活动证据，并输出客服环节服务耗时分布。 |
+| pipeline | 构建与测试并行；区间并集避免把并发工作量误算成总耗时，计算资源并发峰值。 |
+| repairs | 正常维修和复检返工走不同参考路径；识别变体，比较工位服务时间和跨工单并发。 |
 
 ```sh
-moon run --target native cmd/mooncep -- validate examples/files/program.json
-moon run --target native cmd/mooncep -- run examples/files/program.json examples/files/events.ndjson
-moon run --target native cmd/mooncep -- inspect SESSION.json
-moon run --target native cmd/mooncep -- restore SESSION.json EVENTS.ndjson
+moon run --target native examples/procurement
+moon run --target native examples/support
+moon run --target native examples/pipeline
+moon run --target native examples/repairs
+moon run --target native --release examples/process_scale
 ```
 
-`run` emits JSON batches, configured alert records and final counters. `restore`
-emits batches from new commands and finalization; it does not replay old results
-to a sink. The CLI loads each file into memory and bounds it to 16 Mi UTF-16 units;
-library text documents and individual NDJSON lines have smaller bounds.
-See [wire formats](docs/formats.md).
+上述示例都有实际输出和断言，使用自建合成数据。规模示例处理 60,000 个事件、20,000 个实例，实际完成发现、对齐和性能分析；不据此宣称优于其他实现。
 
-On the affected Windows 0.10.16 toolchain, replace `moon ...` with
-`& .\scripts\Invoke-Moon.ps1 ...`. The wrapper adapts extended drive paths for the
-installed official compiler and formatter and restores process environment settings.
-It does not change the installed tools. Other toolchain versions use normal commands.
+## 文件工具
 
-## Verify
+```sh
+moon run --target native cmd/processlens -- analyze examples/files/process-log.json
+moon run --target native cmd/processlens -- align examples/files/process-log.json examples/files/reference-paths.json
+```
+
+`analyze` 输出流程图和性能报告；`align` 对全部实例预先检查累计计算预算，再输出逐步偏差证据。格式、边界、算法复杂度见 [API](docs/api.md)、[语义](docs/semantics.md)、[JSON](docs/formats.md) 和 [性能](docs/performance.md)。
+
+## 功能边界
+
+关系图描述指定排序下的相邻活动，不自动证明因果或并行网关。对齐针对有限参考路径，不是完整 BPMN/Petri-net 一致性验证。没有工作日历和资源容量时，只报告观察到的时间与并发，不宣称真实利用率。项目不执行工作流动作，也不宣称兼容 XES/OCEL 标准。
+
+根包与旧序列引擎相互独立。早期 MoonCEP 的实现和测试保留在可选 `sequence` 子包，工具入口为 `cmd/sequence`，详见 [历史能力文档](docs/sequence/api.md)。沿革和代码来源如实保留，项目更名不等于历史被删除。
+
+## 验证
 
 ```sh
 moon check --target all --deny-warn
@@ -125,11 +84,8 @@ git diff --exit-code
 python scripts/verify_repository.py
 ```
 
-Tests include independent exhaustive subsequence enumeration, optional/repeated
-stages, skip policies, window equality, negative predicates, late data, rollback,
-exact Int64 values, Unicode chunk boundaries and session ownership.
+本机 Windows 0.10.16 如遇官方扩展路径问题，使用 `& .\scripts\Invoke-Moon.ps1 ...` 替代 `moon ...`。该适配仅转发参数，不修改全局工具。
 
-MIT licensed. This is an independent implementation with AI assistance, not a
-source-code port of Apache Flink. Conceptual references and dependency licensing
-are documented in [sources](docs/sources.md). See [contributing](CONTRIBUTING.md)
-for maintenance expectations and [CHANGELOG](CHANGELOG.md) for release scope.
+测试含独立的公共子序列穷举对齐预言机、整数时间槽区间覆盖/并发预言机、JSON 边界和旧检测器回归。CI 验证所有后端、完整场景与文件工具；远端运行状态以仓库 Actions 页面为准。
+
+采用 MIT 许可证，AI 辅助独立实现；参考、依赖和演进来源见 [来源说明](docs/sources.md)。申报书与过程报告保存在仓库外。
