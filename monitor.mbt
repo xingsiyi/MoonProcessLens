@@ -15,7 +15,7 @@ pub(all) struct MonitorStats {
 /// Failed ingestion commits neither partial text nor journal or detector state.
 pub struct Monitor {
   mut reader : CommandReader
-  mut session : Session
+  session : Session
   mut accepted_events : Int64
   mut advances : Int64
   mut matches : Int64
@@ -50,12 +50,32 @@ pub fn Monitor::fork(self : Monitor) -> Monitor {
 ///|
 fn Monitor::commit(self : Monitor, staged : Monitor) -> Unit {
   self.reader = staged.reader
-  self.session = staged.session
+  self.session.engine = staged.session.engine
+  self.session.commands.append(staged.session.commands)
   self.accepted_events = staged.accepted_events
   self.advances = staged.advances
   self.matches = staged.matches
   self.timeouts = staged.timeouts
   self.work = staged.work
+}
+
+///|
+/// Stage only the new journal suffix. Copying the full accumulated journal
+/// once per network chunk would turn many small chunks into quadratic work.
+fn Monitor::stage_delta(self : Monitor) -> Monitor {
+  {
+    reader: self.reader.fork(),
+    session: {
+      engine: self.session.engine.fork(),
+      commands: [],
+      max_commands: self.session.max_commands - self.session.commands.length(),
+    },
+    accepted_events: self.accepted_events,
+    advances: self.advances,
+    matches: self.matches,
+    timeouts: self.timeouts,
+    work: self.work,
+  }
 }
 
 ///|
@@ -93,7 +113,7 @@ pub fn Monitor::ingest(
   self : Monitor,
   chunk : String,
 ) -> Array[Batch] raise CepError {
-  let staged = self.fork()
+  let staged = self.stage_delta()
   let commands = staged.reader.feed(chunk)
   let batches = staged.execute(commands)
   self.commit(staged)
@@ -110,7 +130,7 @@ pub fn Monitor::finish_input(
   if self.reader.closed {
     return []
   }
-  let staged = self.fork()
+  let staged = self.stage_delta()
   let commands = staged.reader.finish()
   if close_time {
     commands.push(Advance(9007230790740991L))

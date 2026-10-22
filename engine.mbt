@@ -263,6 +263,9 @@ fn start_skipped(
   pattern : Pattern,
   outputs : Array[Match],
 ) -> Bool {
+  if pattern.after_match == NoSkip {
+    return false
+  }
   for output in outputs {
     if output.pattern != pattern.id || output.key != key {
       continue
