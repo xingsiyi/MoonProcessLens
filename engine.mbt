@@ -417,62 +417,48 @@ pub fn Engine::advance_watermark(self : Engine, requested : Int64) -> Batch rais
     raise Invalid(path="watermark", reason="expected 0..9007230790740991")
   }
   let buffer = self.buffer.copy()
-  let partitions : Map[String, Array[Branch]] = Map([])
+  let processing = Processing::{ partitions: Map([]), generations: Map([]), deadlines: [], serial: 0, active_count: 0 }
+  let grouped : Map[String, Array[Branch]] = Map([])
   for branch in self.active {
-    match partitions.get(branch.key) {
+    match grouped.get(branch.key) {
       Some(states) => states.push(branch)
-      None => partitions.set(branch.key, [branch])
+      None => grouped.set(branch.key, [branch])
     }
   }
-  let mut active_count = self.active.length()
   let matches : Array[Match] = []
   let timeouts : Array[Timeout] = []
   let work = Work::{ used: 0, limit: self.limits.work_per_call }
+  for key, states in grouped {
+    processing.put(key, states, self.patterns, self.limits, work)
+  }
   let mut processed = 0
   while buffer.length() > 0 && buffer[0].event.time <= requested {
     let time = buffer[0].event.time
-    let touched : Map[String, Bool] = Map([])
+    processing.expire(time, false, self.patterns, matches, timeouts, self.limits, work)
     while buffer.length() > 0 && buffer[0].event.time == time {
       let item = heap_pop(buffer).unwrap()
-      let previous = partitions.get(item.event.key).unwrap_or([])
-      let pending = expire_states(previous, time, false, self.patterns, matches, timeouts, self.limits, work)
-      let updated = process_item(pending, item, self.patterns, matches, self.limits, work)
-      active_count += updated.length() - previous.length()
-      if active_count > self.limits.active_states {
-        raise Resource(resource="active states", limit=self.limits.active_states)
-      }
-      if updated.is_empty() {
-        partitions.remove(item.event.key) |> ignore
-      } else {
-        partitions.set(item.event.key, updated)
-      }
-      if partitions.length() > self.limits.partitions {
-        raise Resource(resource="partitions", limit=self.limits.partitions)
-      }
-      touched.set(item.event.key, true)
+      let previous = processing.partitions.get(item.event.key).unwrap_or([])
+      let updated = process_item(previous, item, self.patterns, matches, self.limits, work)
+      processing.put(item.event.key, updated, self.patterns, self.limits, work)
       processed += 1
     }
-    for key, _ in touched {
-      let previous = partitions.get(key).unwrap_or([])
-      let updated = expire_states(previous, time, true, self.patterns, matches, timeouts, self.limits, work)
-      active_count += updated.length() - previous.length()
-      if updated.is_empty() {
-        partitions.remove(key) |> ignore
-      } else {
-        partitions.set(key, updated)
-      }
-    }
+    processing.expire(time, true, self.patterns, matches, timeouts, self.limits, work)
   }
+  processing.expire(requested, true, self.patterns, matches, timeouts, self.limits, work)
   let active : Array[Branch] = []
-  let keys = partitions.keys().collect()
+  let keys = processing.partitions.keys().collect()
   keys.sort()
   for key in keys {
-    let previous = partitions.get(key).unwrap()
-    let updated = expire_states(previous, requested, true, self.patterns, matches, timeouts, self.limits, work)
-    for branch in updated {
-      active.push(branch)
-    }
+    for branch in processing.partitions.get(key).unwrap() { active.push(branch) }
   }
+  matches.sort_by(match_order)
+  timeouts.sort_by((a, b) => {
+    let order = a.deadline.compare(b.deadline)
+    if order != 0 { order } else {
+      let order = a.pattern.compare(b.pattern)
+      if order != 0 { order } else { a.key.compare(b.key) }
+    }
+  })
   if matches.length() + timeouts.length() > self.limits.outputs_per_call {
     raise Resource(resource="outputs per call", limit=self.limits.outputs_per_call)
   }
