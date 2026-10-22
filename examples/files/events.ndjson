@@ -1,0 +1,5 @@
+{"type":"event","event":{"id":"f1","key":"user/alex","time":"1000","kind":"login_failed","fields":{}}}
+{"type":"event","event":{"id":"f3","key":"user/alex","time":"3000","kind":"login_failed","fields":{}}}
+{"type":"event","event":{"id":"f2","key":"user/alex","time":"2000","kind":"login_failed","fields":{}}}
+{"type":"event","event":{"id":"s1","key":"user/alex","time":"4000","kind":"login_success","fields":{}}}
+{"type":"watermark","time":"4000"}

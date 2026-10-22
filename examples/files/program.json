@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "patterns": [
+    {
+      "schema_version": 1,
+      "id": "failed-then-success",
+      "within": "300000",
+      "after_match": "skip_past_last",
+      "stages": [
+        {"name": "failures", "condition": {"type": "kind", "value": "login_failed"}, "min": 3, "max": 3, "contiguity": "skip_next"},
+        {"name": "success", "condition": {"type": "kind", "value": "login_success"}, "min": 1, "max": 1, "contiguity": "skip_next"}
+      ]
+    }
+  ],
+  "limits": {"buffered_events": 4096, "active_states": 8192, "partitions": 1024, "outputs_per_call": 4096, "work_per_call": 1000000},
+  "projections": [
+    {"schema_version": 1, "pattern": "failed-then-success", "columns": [{"name": "user", "type": "entity_key"}, {"name": "failures", "type": "capture_size", "capture": "failures"}, {"name": "duration_ms", "type": "duration"}]}
+  ]
+}
