@@ -1,0 +1,368 @@
+///|
+struct Branch {
+  pattern_index : Int
+  key : String
+  stage : Int
+  count : Int
+  captures : Array[Capture]
+  positions : Array[Int64]
+  started : Int64
+  last : Int64
+}
+
+///|
+pub struct Engine {
+  patterns : Array[Pattern]
+  limits : Limits
+  mut buffer : Array[Stamped]
+  mut active : Array[Branch]
+  mut watermark : Int64
+  mut ordinal : Int64
+}
+
+///|
+pub fn Engine::new(
+  patterns : Array[Pattern],
+  limits~ : Limits = Limits::default(),
+) -> Engine raise CepError {
+  limits.validate()
+  if patterns.is_empty() || patterns.length() > 64 {
+    raise Invalid(path="patterns", reason="expected 1..64 patterns")
+  }
+  let names : Map[String, Bool] = Map([])
+  for pattern in patterns {
+    if names.contains(pattern.id) {
+      raise Invalid(path="patterns", reason="duplicate pattern id \{pattern.id}")
+    }
+    names.set(pattern.id, true)
+  }
+  {
+    patterns: patterns.map(clone_pattern),
+    limits,
+    buffer: [],
+    active: [],
+    watermark: -1L,
+    ordinal: 0L,
+  }
+}
+
+///|
+pub fn Engine::push(self : Engine, event : Event) -> Int64 raise CepError {
+  if event.time <= self.watermark {
+    raise LateEvent(time=event.time, watermark=self.watermark)
+  }
+  if self.buffer.length() >= self.limits.buffered_events {
+    raise Resource(resource="buffered events", limit=self.limits.buffered_events)
+  }
+  if self.ordinal >= 9007199254740991L {
+    raise Invalid(path="engine", reason="occurrence sequence exhausted")
+  }
+  let next = self.ordinal + 1L
+  heap_push(self.buffer, { event, ordinal: next })
+  self.ordinal = next
+  next
+}
+
+///|
+pub fn Engine::watermark(self : Engine) -> Int64 {
+  self.watermark
+}
+
+///|
+pub fn Engine::buffered(self : Engine) -> Int {
+  self.buffer.length()
+}
+
+///|
+pub fn Engine::active_states(self : Engine) -> Int {
+  self.active.length()
+}
+
+///|
+pub fn Engine::limits(self : Engine) -> Limits {
+  self.limits
+}
+
+///|
+fn branch_signature(branch : Branch) -> String {
+  let builder = StringBuilder()
+  builder.write_string("\{branch.pattern_index}:\{branch.stage}:\{branch.count}:")
+  for capture in branch.captures {
+    builder.write_string("\{capture.events.length()},")
+  }
+  builder.write_string(":")
+  for position in branch.positions {
+    builder.write_string("\{position},")
+  }
+  builder.to_string()
+}
+
+///|
+fn make_match(pattern : Pattern, branch : Branch, absence : Bool) -> Match {
+  {
+    pattern: pattern.id,
+    key: branch.key,
+    captures: branch.captures,
+    occurrences: branch.positions,
+    started: branch.started,
+    ended: if absence { branch.started + pattern.within } else { branch.last },
+    absence,
+  }
+}
+
+///|
+fn append_state(
+  states : Array[Branch],
+  branch : Branch,
+  seen : Map[String, Bool],
+  limits : Limits,
+) -> Unit raise CepError {
+  let signature = branch_signature(branch)
+  if !seen.contains(signature) {
+    if states.length() >= limits.active_states {
+      raise Resource(resource="active states", limit=limits.active_states)
+    }
+    seen.set(signature, true)
+    states.push(branch)
+  }
+}
+
+///|
+fn append_match(
+  matches : Array[Match],
+  value : Match,
+  limits : Limits,
+) -> Unit raise CepError {
+  if matches.length() >= limits.outputs_per_call {
+    raise Resource(resource="outputs per call", limit=limits.outputs_per_call)
+  }
+  matches.push(value)
+}
+
+///|
+fn expand_branch(
+  branch : Branch,
+  pattern : Pattern,
+  states : Array[Branch],
+  matches : Array[Match],
+  seen : Map[String, Bool],
+  limits : Limits,
+  work : Work,
+) -> Unit raise CepError {
+  work.charge()
+  if branch.stage == pattern.stages.length() {
+    if pattern.absence is Some(_) {
+      append_state(states, branch, seen, limits)
+    } else {
+      append_match(matches, make_match(pattern, branch, false), limits)
+    }
+    return
+  }
+  let stage = pattern.stages[branch.stage]
+  if branch.count < stage.max {
+    append_state(states, branch, seen, limits)
+  }
+  if branch.count >= stage.min {
+    expand_branch(
+      { ..branch, stage: branch.stage + 1, count: 0 },
+      pattern, states, matches, seen, limits, work,
+    )
+  }
+}
+
+///|
+fn consume_branch(
+  branch : Branch,
+  item : Stamped,
+  pattern : Pattern,
+  states : Array[Branch],
+  matches : Array[Match],
+  seen : Map[String, Bool],
+  limits : Limits,
+  work : Work,
+) -> Unit raise CepError {
+  work.charge()
+  if branch.stage == pattern.stages.length() {
+    if pattern.absence is Some(condition) &&
+      !condition.evaluate(item.event, branch.captures) {
+      append_state(states, branch, seen, limits)
+    }
+    return
+  }
+  let stage = pattern.stages[branch.stage]
+  if stage.forbidden is Some(condition) &&
+    condition.evaluate(item.event, branch.captures) {
+    return
+  }
+  let accepted = stage.condition.evaluate(item.event, branch.captures)
+  if stage.contiguity == SkipAny ||
+    (stage.contiguity == SkipNext && !accepted) {
+    append_state(states, branch, seen, limits)
+  }
+  if accepted && branch.count < stage.max {
+    let captures = detach_captures(branch.captures)
+    captures[branch.stage].events.push(item.event)
+    let positions = branch.positions.copy()
+    positions.push(item.ordinal)
+    expand_branch(
+      { ..branch, count: branch.count + 1, captures, positions, last: item.event.time },
+      pattern, states, matches, seen, limits, work,
+    )
+  }
+}
+
+///|
+fn first_position(branch : Branch) -> Int64 {
+  branch.positions[0]
+}
+
+///|
+fn skipped(branch : Branch, pattern : Pattern, outputs : Array[Match]) -> Bool {
+  for output in outputs {
+    if output.pattern != pattern.id || output.key != branch.key {
+      continue
+    }
+    match pattern.after_match {
+      NoSkip => ()
+      SkipToNextStart =>
+        if first_position(branch) == output.occurrences[0] {
+          return true
+        }
+      SkipPastLast => {
+        let last = output.occurrences[output.occurrences.length() - 1]
+        let event_time = output.last_event_time()
+        if branch.started < event_time ||
+          (branch.started == event_time && first_position(branch) <= last) {
+          return true
+        }
+      }
+    }
+  }
+  false
+}
+
+///|
+fn process_item(
+  active : Array[Branch],
+  item : Stamped,
+  patterns : Array[Pattern],
+  matches : Array[Match],
+  limits : Limits,
+  work : Work,
+) -> Array[Branch] raise CepError {
+  let states : Array[Branch] = []
+  let seen : Map[String, Bool] = Map([])
+  for branch in active {
+    let pattern = patterns[branch.pattern_index]
+    if branch.key != item.event.key {
+      append_state(states, branch, seen, limits)
+    } else if !skipped(branch, pattern, matches) {
+      consume_branch(branch, item, pattern, states, matches, seen, limits, work)
+    }
+  }
+  for index, pattern in patterns {
+    work.charge()
+    let stage = pattern.stages[0]
+    if stage.condition.evaluate(item.event, []) &&
+      !(stage.forbidden is Some(c) && c.evaluate(item.event, [])) {
+      let captures : Array[Capture] = pattern.stages.map(stage => {
+        name: stage.name,
+        events: [],
+      })
+      captures[0].events.push(item.event)
+      let branch : Branch = {
+        pattern_index: index,
+        key: item.event.key,
+        stage: 0,
+        count: 1,
+        captures,
+        positions: [item.ordinal],
+        started: item.event.time,
+        last: item.event.time,
+      }
+      if !skipped(branch, pattern, matches) {
+        expand_branch(branch, pattern, states, matches, seen, limits, work)
+      }
+    }
+  }
+  states.filter(branch => !skipped(branch, patterns[branch.pattern_index], matches))
+}
+
+///|
+fn expire_states(
+  active : Array[Branch],
+  at : Int64,
+  inclusive : Bool,
+  patterns : Array[Pattern],
+  matches : Array[Match],
+  timeouts : Array[Timeout],
+  limits : Limits,
+  work : Work,
+) -> Array[Branch] raise CepError {
+  let retained = []
+  for branch in active {
+    work.charge()
+    let pattern = patterns[branch.pattern_index]
+    let deadline = branch.started + pattern.within
+    if deadline < at || (inclusive && deadline == at) {
+      if branch.stage == pattern.stages.length() {
+        append_match(matches, make_match(pattern, branch, true), limits)
+      } else {
+        if timeouts.length() + matches.length() >= limits.outputs_per_call {
+          raise Resource(resource="outputs per call", limit=limits.outputs_per_call)
+        }
+        timeouts.push({
+          pattern: pattern.id,
+          key: branch.key,
+          deadline,
+          captures: branch.captures,
+        })
+      }
+    } else {
+      retained.push(branch)
+    }
+  }
+  retained.filter(branch => !skipped(branch, patterns[branch.pattern_index], matches))
+}
+
+///|
+/// Close the event-time prefix through W. Any failure leaves the engine unchanged.
+pub fn Engine::advance_watermark(self : Engine, requested : Int64) -> Batch raise CepError {
+  if requested < self.watermark {
+    raise WatermarkRegression(previous=self.watermark, requested~)
+  }
+  if requested < 0L || requested > 9007199254740991L {
+    raise Invalid(path="watermark", reason="expected 0..9007199254740991")
+  }
+  let buffer = self.buffer.copy()
+  let mut active = self.active.copy()
+  let matches : Array[Match] = []
+  let timeouts : Array[Timeout] = []
+  let work = Work::{ used: 0, limit: self.limits.work_per_call }
+  let mut processed = 0
+  while buffer.length() > 0 && buffer[0].event.time <= requested {
+    let time = buffer[0].event.time
+    active = expire_states(active, time, false, self.patterns, matches, timeouts, self.limits, work)
+    while buffer.length() > 0 && buffer[0].event.time == time {
+      let item = heap_pop(buffer).unwrap()
+      active = process_item(active, item, self.patterns, matches, self.limits, work)
+      processed += 1
+    }
+    active = expire_states(active, time, true, self.patterns, matches, timeouts, self.limits, work)
+  }
+  active = expire_states(active, requested, true, self.patterns, matches, timeouts, self.limits, work)
+  let keys : Map[String, Bool] = Map([])
+  for branch in active {
+    keys.set(branch.key, true)
+  }
+  if keys.length() > self.limits.partitions {
+    raise Resource(resource="partitions", limit=self.limits.partitions)
+  }
+  if matches.length() + timeouts.length() > self.limits.outputs_per_call {
+    raise Resource(resource="outputs per call", limit=self.limits.outputs_per_call)
+  }
+  self.buffer = buffer
+  self.active = active
+  self.watermark = requested
+  { matches, timeouts, processed, work: work.used }
+}

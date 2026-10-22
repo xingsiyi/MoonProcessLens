@@ -1,5 +1,5 @@
 ///|
-priv struct Stamped {
+struct Stamped {
   event : Event
   ordinal : Int64
 }
