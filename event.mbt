@@ -24,10 +24,10 @@ pub fn Event::new(
   require_label(id, "event.id")
   require_label(key, "event.key")
   require_label(kind, "event.kind")
-  if time < 0L || time > 9007199254740991L {
+  if time < 0L || time > MAX_EVENT_TIME {
     raise Invalid(path="event.time", reason="expected 0..9007199254740991")
   }
-  if fields.length() > 128 {
+  if fields.length() > MAX_EVENT_FIELDS {
     raise Resource(resource="event fields", limit=128)
   }
   let names : Map[String, Bool] = Map([])

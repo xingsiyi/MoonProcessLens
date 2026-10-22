@@ -26,7 +26,7 @@ pub fn Engine::new(
   limits~ : Limits = Limits::default(),
 ) -> Engine raise CepError {
   limits.validate()
-  if patterns.is_empty() || patterns.length() > 64 {
+  if patterns.is_empty() || patterns.length() > MAX_PATTERNS {
     raise Invalid(path="patterns", reason="expected 1..64 patterns")
   }
   let names : Map[String, Bool] = Map([])
@@ -484,7 +484,7 @@ pub fn Engine::advance_watermark(
   if requested < self.watermark {
     raise WatermarkRegression(previous=self.watermark, requested~)
   }
-  if requested < 0L || requested > 9007230790740991L {
+  if requested < 0L || requested > FINAL_WATERMARK {
     raise Invalid(path="watermark", reason="expected 0..9007230790740991")
   }
   let buffer = self.buffer.copy()
@@ -591,5 +591,5 @@ pub fn Engine::advance_watermark(
 /// Close every possible event and deadline in the documented timestamp domain.
 /// A failed finish has the same rollback semantics as advance_watermark.
 pub fn Engine::finish(self : Engine) -> Batch raise CepError {
-  self.advance_watermark(9007230790740991L)
+  self.advance_watermark(FINAL_WATERMARK)
 }
