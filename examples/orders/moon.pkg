@@ -1,5 +1,5 @@
 import {
-  "oyjh0381/mooncep" @cep,
+  "JSJ222/mooncep" @cep,
 }
 
 pkgtype(kind: "executable")

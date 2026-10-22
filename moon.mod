@@ -1,8 +1,10 @@
-name = "oyjh0381/mooncep"
+name = "JSJ222/mooncep"
 
 version = "0.1.0"
 
 license = "MIT"
+
+repository = "https://github.com/JSJ222/MoonCEP"
 
 readme = "README.md"
 
