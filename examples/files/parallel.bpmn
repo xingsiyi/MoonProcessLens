@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" targetNamespace="urn:processlens">
+  <process id="Process" isExecutable="false">
+    <startEvent id="start"/><parallelGateway id="split"/>
+    <task id="a" name="A"/><task id="b" name="B"/>
+    <parallelGateway id="join"/><endEvent id="end"/>
+    <sequenceFlow id="f0" sourceRef="start" targetRef="split"/>
+    <sequenceFlow id="f1" sourceRef="split" targetRef="a"/>
+    <sequenceFlow id="f2" sourceRef="split" targetRef="b"/>
+    <sequenceFlow id="f3" sourceRef="a" targetRef="join"/>
+    <sequenceFlow id="f4" sourceRef="b" targetRef="join"/>
+    <sequenceFlow id="f5" sourceRef="join" targetRef="end"/>
+  </process>
+</definitions>

@@ -1,0 +1,5 @@
+import {
+  "xingsiyi/processlens" @lens,
+}
+
+pkgtype(kind: "executable")

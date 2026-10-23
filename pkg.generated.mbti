@@ -8,15 +8,35 @@ import {
 // Values
 pub fn alignment_to_json(TraceAlignment) -> Json
 
+pub fn cohort_comparison_to_json(CohortComparison) -> Json
+
 pub fn log_to_json(EventLog) -> Json
+
+pub fn model_alignment_to_json(ModelAlignment) -> Json
+
+pub fn model_analysis_to_json(ModelAnalysis) -> Json
 
 pub fn parse_alignment_spec(String) -> AlignmentSpec raise ProcessError
 
+pub fn parse_bpmn(String) -> BpmnModel raise ProcessError
+
 pub fn parse_log(String) -> EventLog raise ProcessError
+
+pub fn parse_net(String) -> PetriNet raise ProcessError
+
+pub fn parse_pnml(String) -> PetriNet raise ProcessError
+
+pub fn parse_policies(String) -> Array[ProcessPolicy] raise ProcessError
+
+pub fn parse_xes(String, mode? : XesMode) -> EventLog raise ProcessError
 
 pub fn performance_to_json(PerformanceReport) -> Json
 
+pub fn policy_results_to_json(Array[PolicyResult]) -> Json
+
 pub fn process_map_to_json(ProcessMap) -> Json
+
+pub fn resource_handoffs_to_json(Array[ResourceHandoff]) -> Json
 
 // Errors
 pub(all) suberror ProcessError {
@@ -58,11 +78,39 @@ pub fn AlignmentMove::not_equal(Self, Self) -> Bool
 pub fn AlignmentMove::to_repr(Self) -> @debug.Repr
 
 pub struct AlignmentSpec {
-  paths : Array[ReferencePath]
-  costs : AlignmentCosts
+  // private fields
 }
 pub fn AlignmentSpec::costs(Self) -> AlignmentCosts
 pub fn AlignmentSpec::paths(Self) -> Array[ReferencePath]
+
+pub(all) struct BpmnFlow {
+  id : String
+  source : String
+  target : String
+}
+
+pub(all) enum BpmnKind {
+  Start
+  End
+  Task
+  Exclusive
+  Parallel
+}
+
+pub struct BpmnModel {
+  // private fields
+}
+pub fn BpmnModel::flows(Self) -> Array[BpmnFlow]
+pub fn BpmnModel::new(Array[BpmnNode], Array[BpmnFlow]) -> Self raise ProcessError
+pub fn BpmnModel::nodes(Self) -> Array[BpmnNode]
+pub fn BpmnModel::to_bpmn(Self) -> String
+pub fn BpmnModel::to_petri_net(Self) -> PetriNet raise ProcessError
+
+pub(all) struct BpmnNode {
+  id : String
+  kind : BpmnKind
+  activity : String?
+}
 
 pub(all) struct CasePerformance {
   case_id : String
@@ -74,17 +122,34 @@ pub(all) struct CasePerformance {
   overlapping_starts : Int32
 }
 
+pub(all) struct CaseSelection {
+  require_activities : Array[String]
+  exclude_activities : Array[String]
+  minimum_cycle : Int64?
+  maximum_cycle : Int64?
+  starts_from : Int64?
+  starts_before : Int64?
+}
+pub fn CaseSelection::all() -> Self
+
 pub struct CaseTrace {
-  id : String
-  events : Array[LogEvent]
+  // private fields
 }
 pub fn CaseTrace::activities(Self) -> Array[String]
 pub fn CaseTrace::align(Self, Array[ReferencePath], costs? : AlignmentCosts, max_cells? : Int32) -> TraceAlignment raise ProcessError
+pub fn CaseTrace::align_net(Self, PetriNet, limits? : ModelLimits) -> ModelAlignment raise ProcessError
 pub fn CaseTrace::cycle_time(Self) -> Int64
 pub fn CaseTrace::events(Self) -> Array[LogEvent]
 pub fn CaseTrace::id(Self) -> String
 pub fn CaseTrace::new(String, Array[LogEvent]) -> Self raise ProcessError
 pub fn CaseTrace::performance(Self) -> CasePerformance
+
+pub(all) struct CohortComparison {
+  before_cases : Int32
+  after_cases : Int32
+  total_variation : Double
+  variants : Array[VariantDelta]
+}
 
 pub(all) struct DurationDistribution {
   count : Int32
@@ -96,15 +161,22 @@ pub(all) struct DurationDistribution {
 }
 
 pub struct EventLog {
-  traces : Array[CaseTrace]
-  event_count : Int32
+  // private fields
 }
 pub fn EventLog::align(Self, Array[ReferencePath], costs? : AlignmentCosts, max_cells? : Int32) -> Array[TraceAlignment] raise ProcessError
+pub fn EventLog::align_net(Self, PetriNet, limits? : ModelLimits, reuse_variants? : Bool) -> Array[ModelAlignment] raise ProcessError
 pub fn EventLog::case_count(Self) -> Int32
+pub fn EventLog::check_policies(Self, Array[ProcessPolicy], max_work? : Int32, max_findings? : Int32) -> Array[PolicyResult] raise ProcessError
+pub fn EventLog::compare_cohort(Self, Self) -> CohortComparison raise ProcessError
 pub fn EventLog::discover(Self) -> ProcessMap
+pub fn EventLog::discover_alpha(Self, max_work? : Int32) -> PetriNet raise ProcessError
+pub fn EventLog::discover_prefix_net(Self, max_nodes? : Int32) -> PetriNet raise ProcessError
 pub fn EventLog::event_count(Self) -> Int32
 pub fn EventLog::new(Array[LogEvent], max_events? : Int32, max_cases? : Int32, max_trace? : Int32) -> Self raise ProcessError
 pub fn EventLog::performance(Self) -> PerformanceReport
+pub fn EventLog::resource_handoffs(Self) -> Array[ResourceHandoff]
+pub fn EventLog::select_cases(Self, CaseSelection) -> Self raise ProcessError
+pub fn EventLog::to_xes(Self) -> String raise ProcessError
 pub fn EventLog::traces(Self) -> Array[CaseTrace]
 
 pub(all) struct FlowEdge {
@@ -143,6 +215,55 @@ pub fn LogEvent::resource(Self) -> String?
 pub fn LogEvent::started(Self) -> Int64
 pub fn LogEvent::to_repr(Self) -> @debug.Repr
 
+pub(all) struct ModelAlignment {
+  case_id : String
+  cost : Int32
+  conforming : Bool
+  moves : Array[NetMove]
+  visited_states : Int32
+  explored_edges : Int32
+  transition_checks : Int32
+  reused_variant : Bool
+}
+
+pub(all) struct ModelAnalysis {
+  complete : Bool
+  states : Int32
+  edges : Int32
+  final_reachable : Bool
+  all_states_can_complete : Bool
+  proper_completion : Bool
+  dead_transitions : Array[String]
+  deadlock_markings : Array[Array[Int32]]
+}
+
+pub(all) struct ModelLimits {
+  states : Int32
+  edges : Int32
+  tokens_per_place : Int32
+}
+pub fn ModelLimits::default() -> Self
+
+pub(all) struct NetArc {
+  source : String
+  target : String
+  weight : Int32
+}
+
+pub(all) enum NetMove {
+  Sync(event_id~ : String, transition~ : String, activity~ : String)
+  LogOnly(event_id~ : String, activity~ : String)
+  ModelOnly(transition~ : String, activity~ : String?)
+} derive(Eq, @debug.Debug)
+pub fn NetMove::equal(Self, Self) -> Bool
+pub fn NetMove::not_equal(Self, Self) -> Bool
+pub fn NetMove::to_repr(Self) -> @debug.Repr
+
+pub(all) struct NetTransition {
+  id : String
+  activity : String?
+}
+
 pub(all) struct PerformanceReport {
   cases : Array[CasePerformance]
   activities : Array[ActivityPerformance]
@@ -150,6 +271,43 @@ pub(all) struct PerformanceReport {
   resources : Array[ResourcePerformance]
   cycle_times : DurationDistribution
 }
+
+pub struct PetriNet {
+  // private fields
+}
+pub fn PetriNet::analyze(Self, limits? : ModelLimits) -> ModelAnalysis raise ProcessError
+pub fn PetriNet::arcs(Self) -> Array[NetArc]
+pub fn PetriNet::enabled(Self, Array[Int32]) -> Array[String] raise ProcessError
+pub fn PetriNet::final_marking(Self) -> Array[Int32]
+pub fn PetriNet::fire(Self, Array[Int32], String) -> Array[Int32] raise ProcessError
+pub fn PetriNet::initial_marking(Self) -> Array[Int32]
+pub fn PetriNet::new(Array[String], Array[NetTransition], Array[NetArc], Array[PlaceTokens], Array[PlaceTokens]) -> Self raise ProcessError
+pub fn PetriNet::places(Self) -> Array[String]
+pub fn PetriNet::to_json(Self) -> Json
+pub fn PetriNet::to_pnml(Self) -> String
+pub fn PetriNet::transitions(Self) -> Array[NetTransition]
+
+pub(all) struct PlaceTokens {
+  place : String
+  tokens : Int32
+}
+
+pub(all) struct PolicyResult {
+  case_id : String
+  policy : String
+  status : PolicyStatus
+  event_ids : Array[String]
+}
+
+pub(all) enum PolicyStatus {
+  Satisfied
+  Violated
+  Inconclusive
+  NotApplicable
+} derive(Eq, @debug.Debug)
+pub fn PolicyStatus::equal(Self, Self) -> Bool
+pub fn PolicyStatus::not_equal(Self, Self) -> Bool
+pub fn PolicyStatus::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ProcessMap {
   nodes : Array[ActivityNode]
@@ -160,18 +318,31 @@ pub(all) struct ProcessMap {
 }
 pub fn ProcessMap::frequent_edges(Self, Int32) -> Array[FlowEdge] raise ProcessError
 
+pub(all) enum ProcessPolicy {
+  Response(id~ : String, trigger~ : String, target~ : String, within_ms~ : Int64?)
+  Precedence(id~ : String, trigger~ : String, required~ : String)
+  NotCoexist(id~ : String, first~ : String, second~ : String)
+  SeparationOfDuties(id~ : String, first~ : String, second~ : String)
+}
+
 pub(all) struct ProcessVariant {
   activities : Array[String]
   cases : Array[String]
 }
 
 pub struct ReferencePath {
-  name : String
-  activities : Array[String]
+  // private fields
 }
 pub fn ReferencePath::activities(Self) -> Array[String]
 pub fn ReferencePath::name(Self) -> String
 pub fn ReferencePath::new(String, Array[String]) -> Self raise ProcessError
+
+pub(all) struct ResourceHandoff {
+  source : String
+  target : String
+  occurrences : Int32
+  cases : Int32
+}
 
 pub(all) struct ResourcePerformance {
   resource : String
@@ -187,6 +358,17 @@ pub(all) struct TraceAlignment {
   fitness : Double
   moves : Array[AlignmentMove]
   evaluated_cells : Int32
+}
+
+pub(all) struct VariantDelta {
+  activities : Array[String]
+  before_cases : Int32
+  after_cases : Int32
+}
+
+pub(all) enum XesMode {
+  Completed
+  LifecyclePairs
 }
 
 // Type aliases

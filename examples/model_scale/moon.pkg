@@ -1,0 +1,6 @@
+import {
+  "xingsiyi/processlens" @lens,
+  "moonbitlang/core/env",
+}
+
+pkgtype(kind: "executable")

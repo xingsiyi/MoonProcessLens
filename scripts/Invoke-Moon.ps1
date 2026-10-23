@@ -1,7 +1,8 @@
 # Project-local workaround for the 2026-10-16 Windows drive-path regression.
 # It runs the installed moon/moonc, preserves exit codes and never edits them.
-[CmdletBinding()]
-param([Parameter(ValueFromRemainingArguments = $true)][string[]]$MoonArgs)
+# Keep raw argv: advanced PowerShell parameter binding can consume the `--`
+# separator intended for the executable launched by `moon run`.
+$MoonArgs = @($args)
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot

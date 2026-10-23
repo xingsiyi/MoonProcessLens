@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<log xmlns="http://www.xes-standard.org/" xes.version="1.0">
+  <trace><string key="concept:name" value="first"/>
+    <event><string key="concept:name" value="A"/><date key="time:timestamp" value="2026-10-23T00:00:00Z"/></event>
+    <event><string key="concept:name" value="B"/><date key="time:timestamp" value="2026-10-23T00:00:01Z"/></event>
+  </trace>
+  <trace><string key="concept:name" value="second"/>
+    <event><string key="concept:name" value="B"/><date key="time:timestamp" value="2026-10-23T00:00:00Z"/></event>
+    <event><string key="concept:name" value="A"/><date key="time:timestamp" value="2026-10-23T00:00:01Z"/></event>
+  </trace>
+</log>

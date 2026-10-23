@@ -1,7 +1,7 @@
 ///|
 pub struct ReferencePath {
-  name : String
-  activities : Array[String]
+  priv name : String
+  priv activities : Array[String]
 }
 
 ///|

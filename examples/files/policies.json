@@ -1,0 +1,1 @@
+{"policies":[{"id":"after-A","kind":"response","first":"A","second":"B","within_ms":"2000"},{"id":"before-B","kind":"precedence","first":"B","second":"A"}]}

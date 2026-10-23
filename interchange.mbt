@@ -147,8 +147,8 @@ pub fn log_to_json(log : EventLog) -> Json {
 
 ///|
 pub struct AlignmentSpec {
-  paths : Array[ReferencePath]
-  costs : AlignmentCosts
+  priv paths : Array[ReferencePath]
+  priv costs : AlignmentCosts
 }
 
 ///|

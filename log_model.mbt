@@ -92,8 +92,8 @@ pub fn LogEvent::resource(self : LogEvent) -> String? {
 
 ///|
 pub struct CaseTrace {
-  id : String
-  events : Array[LogEvent]
+  priv id : String
+  priv events : Array[LogEvent]
 }
 
 ///|
@@ -147,8 +147,8 @@ pub fn CaseTrace::cycle_time(self : CaseTrace) -> Int64 {
 
 ///|
 pub struct EventLog {
-  traces : Array[CaseTrace]
-  event_count : Int32
+  priv traces : Array[CaseTrace]
+  priv event_count : Int32
 }
 
 ///|
