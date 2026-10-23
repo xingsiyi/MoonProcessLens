@@ -2,9 +2,9 @@
 
 MoonProcessLens 是使用 MoonBit 实现的**过程日志分析与流程挖掘基础库**。它从订单、工单、审批、生产及流水线中已经发生的活动记录，发现实际处理路径，解释与参考流程的偏差，并定位等待、返工和资源并发压力。
 
-## 0.2.0 开发版：从路径分析扩展到模型级流程挖掘
+## 0.2.0：从路径分析扩展到模型级流程挖掘
 
-本轮新增内容**尚未推送或发布**，已有 Mooncakes 0.1.0 不包含这些接口。原有 DFG、参考路径和性能接口保留；`EventLog`、`CaseTrace`、`ReferencePath`、`AlignmentSpec` 的内部数组现为私有，外部代码应使用复制返回的访问方法，避免破坏日志不变量。
+本版新增模型接口，旧版 0.1.0 不包含这些接口。原有 DFG、参考路径和性能接口保留；`EventLog`、`CaseTrace`、`ReferencePath`、`AlignmentSpec` 的内部数组现为私有，外部代码应使用复制返回的访问方法，避免破坏日志不变量。
 
 | 新增核心能力 | 实际可复用的结果 |
 | --- | --- |
@@ -35,9 +35,11 @@ moon run --target native examples/standard_workflow
 
 `python scripts/compare_pm4py.py` 使用独立 PM4Py 2.7.23（开发期 oracle，非运行依赖）。已实测 484 个无权模型对齐成本、6 个 Alpha 发现行为、8 个 XES 事件、2 个 PNML 成本、3 个 BPMN 行为一致；PM4Py 写出的 XES/PNML 再由本库读取验证 2 个实例。另有 121 个带权成本使用 PM4Py 执行语义枚举接受语言加独立距离计算，不冒称其对齐器本身支持该权重样例。完整版本条件和局限见 [验证说明](docs/models.md)。
 
+参照对象是真实安装的 PM4Py 发布包，不是自写的替身；但“使用成熟完整工具作参照”不等于“覆盖其全部能力”。[PM4Py 能力对应与验证矩阵](docs/reference-coverage.md) 逐项列出已实现、独立对照、语义差异与未覆盖能力。项目不是 PM4Py 的源码移植，也不依赖 Python 执行核心计算。
+
 `moon run --target native --release examples/model_scale` 对 2000 个实例、4 个变体做 10 轮成本及完整证据一致性对比。本机重复变体负载下每轮复用 1996 个实例，搜索状态 32 对 16000，最近一次 P50 为 3ms 对 52ms（前次 4ms 对 52ms）；不保证其他分布、更复杂模型或跨机器收益。
 
-本轮本地 `moon check/build/test --target all --deny-warn` 已通过；wasm、wasm-gc、JavaScript、native 每个后端各 158 项测试通过。新增 CI 配置尚未推送，因此不将本地验证写成远程 CI 已通过。
+本轮本地 `moon check/build/test --target all --deny-warn` 已通过；wasm、wasm-gc、JavaScript、native 每个后端各 158 项测试通过。CI 同时执行四后端及独立 PM4Py job；远程执行状态以 [GitHub Actions](https://github.com/xingsiyi/MoonProcessLens/actions) 对应提交为准，不以本地结果代替。
 
 输入是带 `case_id / activity / started / completed / resource` 的区间日志；输出是可供报表、可视化及业务工具使用的流程关系图、路径变体、对齐证据和耗时报告。核心分析不依赖外部服务或流计算集群。
 
@@ -53,6 +55,8 @@ moon run --target native examples/standard_workflow
 ## 本地使用
 
 模块为 `xingsiyi/processlens`。GitHub 与 Mooncakes 发布账号均为 `xingsiyi`；项目继续使用原本地文件夹，文件夹名称不代表产品名称。
+
+安装模型能力版本：`moon add xingsiyi/processlens@0.2.0`。
 
 ```moonbit
 import { "xingsiyi/processlens" @lens }

@@ -1,7 +1,7 @@
 # Model discovery, conformance and standard exchange
 
-This page describes the **local 0.2.0 development version**, not the previously
-published 0.1.0 API. It addresses the gap between directly-follows/path diagnostics
+This page describes the **0.2.0 model API**, not the earlier 0.1.0 API.
+It addresses the gap between directly-follows/path diagnostics
 and executable process models. Existing DFG/reference-path/performance operations
 remain available; they are not rebranded as model discovery.
 
@@ -236,6 +236,10 @@ text cap. Use host file-size/process quotas for untrusted files. Reports contain
 event/case/resource identities and should be protected or anonymized by hosts.
 
 ## PM4Py reference: measured, separated claims
+
+See the [capability and evidence matrix](reference-coverage.md) for reference
+scope across discovery, conformance, exchange and reusable analysis. Using an
+actual PM4Py distribution does not imply complete feature or standards parity.
 
 Install `pm4py==2.7.23` into an isolated Python 3.11 environment (or ignored
 `.local/pm4py-runtime`), then run `python scripts/compare_pm4py.py`. The runner

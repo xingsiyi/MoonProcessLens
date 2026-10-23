@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 — Unreleased (2026-10-23 local development)
+## 0.2.0 — 2026-10-23
 
 - Add ordinary weighted accepting Petri nets, immutable model ownership and explicit initial/final markings.
 - Add classical Alpha discovery, exact finite-language prefix nets and bounded model reachability diagnostics.
