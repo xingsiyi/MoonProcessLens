@@ -5,6 +5,8 @@ import os
 import subprocess
 import tempfile
 
+from native_artifact import processlens_executable
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -13,7 +15,7 @@ def main():
     launcher = (["pwsh", "-NoProfile", "-File", str(ROOT / "scripts/Invoke-Moon.ps1")]
                 if os.name == "nt" else ["moon"])
     subprocess.run(launcher + ["build", "cmd/processlens", "--target", "native", "--frozen"], cwd=ROOT, check=True)
-    cli = ROOT / "_build/native/debug/build/cmd/processlens" / ("processlens.exe" if os.name == "nt" else "processlens")
+    cli = processlens_executable(ROOT)
     count = 0
 
     def run(*args, expected=0):

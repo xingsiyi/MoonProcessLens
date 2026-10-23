@@ -10,6 +10,7 @@
 - Add three end-to-end scenarios, model-scale workload, PM4Py 2.7.23 comparisons and bidirectional file interoperability.
 - Add nonzero check/audit outcomes and 15 executable CLI workflow checks; fix Windows wrapper argument separation.
 - Hide mutable log/reference internals behind existing copy-returning accessors.
+- Resolve native CLI artifacts by built filename rather than host OS; cover Linux's .exe suffix in integration runners.
 
 ## 2026-10-22 — MoonProcessLens root established
 

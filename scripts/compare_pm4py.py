@@ -11,6 +11,8 @@ import subprocess
 import sys
 import tempfile
 
+from native_artifact import processlens_executable
+
 ROOT = Path(__file__).resolve().parents[1]
 isolated = ROOT / ".local" / "pm4py-runtime"
 if isolated.exists():
@@ -109,7 +111,7 @@ def main():
     counts = {"model_alignment_costs": 0, "weighted_language_costs": 0, "alpha_discovery_costs": 0,
               "xes_events": 0, "pnml_import_costs": 0, "bpmn_conversion_costs": 0, "reverse_interchange_cases": 0}
     subprocess.run(launcher + ["build", "cmd/processlens", "--target", "native", "--frozen"], cwd=ROOT, check=True)
-    cli = ROOT / "_build/native/debug/build/cmd/processlens" / ("processlens.exe" if os.name == "nt" else "processlens")
+    cli = processlens_executable(ROOT)
     for line in output.stdout.splitlines():
         row = json.loads(line)
         if row["kind"] == "alignment":
