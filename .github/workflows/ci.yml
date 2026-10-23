@@ -57,3 +57,31 @@ jobs:
         run: |
           moon run --target native --release --deny-warn examples/process_scale
           moon run --target native --release --deny-warn examples/performance
+      - name: Model discovery, conformance and standard-log scenarios
+        run: |
+          moon run --target native --deny-warn examples/model_discovery
+          moon run --target native --deny-warn examples/model_conformance
+          moon run --target native --deny-warn examples/standard_workflow
+          python3 scripts/verify_model_cli.py
+      - name: Batch model-alignment equivalence workload
+        run: moon run --target native --release --deny-warn examples/model_scale
+
+  pm4py-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install independent reference and MoonBit
+        run: |
+          python -m pip install pm4py==2.7.23
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Prepare dependencies and compare finite supported profile
+        run: |
+          moon update
+          moon check --target wasm-gc --deny-warn
+          python scripts/compare_pm4py.py

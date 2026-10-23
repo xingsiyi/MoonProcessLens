@@ -1,5 +1,10 @@
 # Process analysis API
 
+The 0.2.0 development API additionally provides `PetriNet`, `BpmnModel`,
+`discover_alpha`, `discover_prefix_net`, `align_net`, XES/PNML exchange and
+policy/cohort/resource analysis. See [models and support profiles](models.md)
+and `pkg.generated.mbti` for their full interfaces and explicit limitations.
+
 The module is `xingsiyi/processlens`. Import its root package as `lens`.
 
 | Interface | Responsibility |

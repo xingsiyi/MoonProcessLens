@@ -1,5 +1,9 @@
 # Process interchange, schema version 1
 
+For new standard XML adapters, native model JSON, policy specifications and CLI
+exit semantics, see [model exchange profiles](models.md). The JSON log format
+below is retained unchanged; XES is an additional explicit adapter, not a rename.
+
 `parse_log` accepts a root object with exactly `schema_version` (numeric 1) and
 `events` (an array). Each event requires string `id`, `case_id`, `activity`,
 `started`, `completed`; optional `resource` is a string or null. Timestamps are

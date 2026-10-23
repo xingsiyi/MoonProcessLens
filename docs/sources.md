@@ -1,10 +1,44 @@
 # Sources, ecosystem position and licensing
 
+## 2026-10-23 model-mining extension
+
+The new model, discovery, synchronous-product search, XML transport, adapters,
+policies and cohort implementation are independent MoonBit code written with AI
+assistance. The MIT runtime does not call, vendor, translate or redistribute PM4Py.
+Its ordinary P/T firing, classical Alpha footprint/maximal pairs, prefix acceptor,
+and nonnegative shortest-path algorithms follow public mathematical descriptions.
+
+Behavioural references: [process discovery overview](https://processmining.org/process-discovery.html),
+[PM4Py discovery API](https://processintelligence.solutions/app/pm4py/api/api/pm4py.discovery.html),
+[XES task force description](https://www.tf-pm.org/resources/xes-standard/about-xes),
+[BPMN 2.0.2](https://www.omg.org/spec/BPMN/2.0.2) and PNML ordinary P/T XML conventions.
+No specification text, external dataset, screenshots or diagrams are redistributed.
+All new logs/models/fixtures are synthetic original examples, not real customer data.
+
+The optional Python harness uses the published public API of
+[PM4Py 2.7.23](https://github.com/process-intelligence-solutions/pm4py), AGPL-3.0,
+as an external development-time reference. Its source and third-party dependencies
+are installed in an ignored local directory or isolated environment, not included
+in the Mooncakes package. Retain upstream licensing when installing or redistributing
+that separate environment; it is not licensed by this project's MIT file.
+The harness and fixture generator are original test integration code, not a port
+of PM4Py's implementation. See [models](models.md) for the distinct comparison
+paths and weighted-alignment reference limitation found during testing.
+
+Basic Petri-net firing already exists in the adjacent `moonpetri` project noted
+below. The independent contribution here is model discovery + trace/model
+conformance + standard exchange + case/resource/temporal analysis, not claiming
+the token primitive is new. Its compact ordinary-net representation is shared
+by discovery and alignment to keep accepting-state, budget and witness semantics
+consistent; adapters can use JSON/PNML rather than duplicate another simulator.
+There is no claim that all unpublished projects are absent or that this reaches
+PM4Py's full algorithm catalogue.
+
 MoonProcessLens has an independent process-log root package: case reconstruction,
 empirical directly-follows discovery, finite-reference weighted edit alignment and
 interval performance analysis. Its code and synthetic fixtures were created with AI
 assistance; no external process-mining source or production dataset was imported.
-The alignment is a direct dynamic program verified against independently enumerated
+The retained finite-reference alignment is a direct dynamic program verified against independently enumerated
 common subsequences, not a port of a Petri-net alignment engine.
 
 A 2026-10-22 review of 3,221 official directory entries and selected fixed APIs did

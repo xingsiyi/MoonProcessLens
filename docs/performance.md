@@ -1,5 +1,9 @@
 # Complexity and resource model
 
+For Alpha/prefix discovery, Petri product search, variant reuse and its measured
+2000-case workload, see [model complexity](models.md). The old 60000-event
+diagnostic workload does not measure model search performance.
+
 Let N be events, C cases, L a case length, A distinct activities, E distinct
 direct-follow edges, and R reference paths with lengths M_r.
 

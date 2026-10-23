@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased — MoonProcessLens
+## 0.2.0 — Unreleased (2026-10-23 local development)
+
+- Add ordinary weighted accepting Petri nets, immutable model ownership and explicit initial/final markings.
+- Add classical Alpha discovery, exact finite-language prefix nets and bounded model reachability diagnostics.
+- Add synchronous-product Dijkstra alignment, silent transitions, exact accepting marking and variant-cached evidence rebinding.
+- Add BPMN control-flow conversion, XES completed/lifecycle interval exchange, PNML import/export and strict bounded XML profiles.
+- Add declarative policy/SLA audits, whole-case cohorts, resource handoff networks and variant distribution comparisons.
+- Add three end-to-end scenarios, model-scale workload, PM4Py 2.7.23 comparisons and bidirectional file interoperability.
+- Add nonzero check/audit outcomes and 15 executable CLI workflow checks; fix Windows wrapper argument separation.
+- Hide mutable log/reference internals behind existing copy-returning accessors.
+
+## 2026-10-22 — MoonProcessLens root established
 
 - Establish process-log reconstruction as an independent root package.
 - Discover activity/edge frequencies, case coverage, loops and exact variants.

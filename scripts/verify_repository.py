@@ -29,7 +29,7 @@ def inspect():
     leaked = [name for name in tracked if name and forbidden.search(name)]
     if leaked:
         raise ValueError("tracked local material/build output: " + ", ".join(leaked))
-    production = tests = examples = cli = 0
+    production = tests = examples = cli = auxiliary = 0
     production_by_package = {}
     for name in tracked:
         if not name.endswith(".mbt"):
@@ -41,6 +41,8 @@ def inspect():
             examples += count
         elif name.startswith("cmd/"):
             cli += count
+        elif name.startswith("scripts/"):
+            auxiliary += count
         else:
             production += count
             package = str(Path(name).parent).replace("\\", "/")
@@ -63,7 +65,7 @@ def inspect():
         raise ValueError("local material/build output remains in Git history: " + ", ".join(historical_leaks))
     return {"production_moonbit_lines": production,
             "production_by_package": production_by_package, "test_lines": tests,
-            "example_lines": examples, "cli_lines": cli,
+            "example_lines": examples, "cli_lines": cli, "oracle_fixture_lines": auxiliary,
             "commits": commits, "tracked_local_materials": leaked,
             "count_definition": "nonblank, noncomment physical .mbt lines; excludes generated interfaces"}
 

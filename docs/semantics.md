@@ -1,5 +1,10 @@
 # Process semantics and limits
 
+This page describes the retained log/DFG/reference-path semantics. Model discovery,
+model alignment, BPMN control flow and XES/PNML profiles are separate interfaces,
+documented in [models](models.md); their guarantees must not be inferred from DFG
+adjacency or the finite-path alignment below.
+
 LogEvent IDs must be globally unique within a log. Labels are nonempty, bounded
 to 256 UTF-16 units and exclude ASCII controls. All intervals satisfy
 `0 <= started <= completed <= 9007199254740991`. Units are caller-selected and

@@ -23,8 +23,44 @@ An exact activity-label sequence shared by one or more observed cases, including
 **Reference path**:
 A finite, named activity sequence representing an accepted or comparison process variant.
 
-**Alignment**:
+**Reference-path alignment**:
 A minimum-cost explanation connecting an observed trace to a reference path through synchronous, unexpected and missing activities.
+
+**Accepting Petri net**:
+A place/transition process model with explicit initial and final token markings, describing permitted activity executions including concurrency and loops.
+_Avoid_: directly-follows graph, reference path
+
+**Marking**:
+The tokens currently present at each place in a Petri net.
+_Avoid_: activity sequence, node status
+
+**Silent transition**:
+A model step that changes the marking without representing an observed business activity.
+_Avoid_: missing event, empty activity
+
+**Model alignment**:
+A minimum-cost explanation connecting a whole trace to an accepting model execution through synchronous, log-only and model-only steps.
+_Avoid_: reference-path alignment, token-replay fitness
+
+**Alpha discovery**:
+The classical causal-footprint discovery method that constructs Petri net places from maximal independent activity sets.
+_Avoid_: DFG rendering, Inductive Miner
+
+**Prefix-net discovery**:
+A model of exactly the finite observed trace language with common prefixes shared and repeated activities retained as distinct occurrences.
+_Avoid_: generalised loop discovery
+
+**Lifecycle pair**:
+A matched start and completion of the same activity occurrence in a case, distinguished by its instance identity when overlaps exist.
+_Avoid_: adjacent events, arbitrary FIFO match
+
+**Cohort**:
+A selection of complete cases belonging to an analysis population, without truncating their histories.
+_Avoid_: sliced event window
+
+**Policy outcome**:
+The satisfied, violated, inconclusive or not-applicable evidence for a declarative business rule on one case.
+_Avoid_: universal process correctness
 
 **Service work**:
 The sum of activity durations, including work performed concurrently.

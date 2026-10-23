@@ -1,0 +1,5 @@
+# Add executable model semantics without disguising partial support
+
+The root's DFG and finite-path alignment are useful diagnostics but do not constitute model discovery or model-level conformance. Add an ordinary accepting P/T-net model shared by classical Alpha/prefix discovery, BPMN control-flow conversion and synchronous-product Dijkstra alignment; exploration failures are explicit, and reachability conclusions are positive only after complete bounded exploration. Alpha and prefix discovery serve distinct assumptions rather than hiding noisy/short-loop fallbacks.
+
+Use explicit XES, PNML and BPMN XML profiles, preserving known projection limits and rejecting unsupported execution semantics. Tested XMLParser releases currently require an obsolete quickcheck/gen package incompatible with MoonBit 0.10.16; x/time also fails lexscan checking. Rather than patch dependencies invisibly, the project implements a small bounded non-validating XML transport and exact millisecond Gregorian conversion, not a general XML stack. Mature PM4Py remains an external development-time behavioural oracle only; no AGPL implementation is copied into the MIT core.
