@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- 资源并发时间线与案例流量窗口，含资源边界、回归测试及 `examples/workload_windows`。
+- CI 显式验证 moonc >= 0.10.16，并运行新增示例。
+
 ## 0.2.0 — 2026-10-23
 
 - Add ordinary weighted accepting Petri nets, immutable model ownership and explicit initial/final markings.

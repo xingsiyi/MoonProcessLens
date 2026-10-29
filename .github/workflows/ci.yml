@@ -28,6 +28,10 @@ jobs:
         run: |
           python3 scripts/verify_repository.py
           python3 -m unittest discover -s scripts -p 'test_native_artifact.py'
+      - name: Minimum compiler version
+        run: python tools/verify_toolchain.py
+      - name: Run extension scenario
+        run: moon run examples/workload_windows --target wasm-gc --deny-warn
       - name: Check
         run: moon check --target all --deny-warn
       - name: Build

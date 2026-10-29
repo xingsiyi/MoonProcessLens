@@ -143,3 +143,14 @@ python scripts/verify_repository.py
 测试含独立的公共子序列穷举对齐预言机、整数时间槽区间覆盖/并发预言机、JSON 边界和旧检测器回归。CI 验证所有后端、完整场景与文件工具；远端运行状态以仓库 Actions 页面为准。
 
 采用 MIT 许可证，AI 辅助独立实现；参考、依赖和演进来源见 [来源说明](docs/sources.md)。申报书与过程报告保存在仓库外。
+
+## Source-workspace extensions (unreleased)
+
+Compiler requirement: **moonc >= 0.10.16**. See
+[the API, scope and complexity notes](docs/FEATURE_EXTENSIONS.md) for **资源并发时间线与案例流量窗口**.
+These additions are available in this source tree; the previously published package
+version does not yet contain them. Run the assertion-based example from the repository:
+
+```sh
+moon run examples/workload_windows --target wasm-gc --deny-warn
+```

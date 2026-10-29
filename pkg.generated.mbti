@@ -172,9 +172,11 @@ pub fn EventLog::discover(Self) -> ProcessMap
 pub fn EventLog::discover_alpha(Self, max_work? : Int32) -> PetriNet raise ProcessError
 pub fn EventLog::discover_prefix_net(Self, max_nodes? : Int32) -> PetriNet raise ProcessError
 pub fn EventLog::event_count(Self) -> Int32
+pub fn EventLog::flow_windows(Self, Int64, Int64, Int64, max_windows? : Int32, max_work? : Int32) -> Array[FlowWindow] raise ProcessError
 pub fn EventLog::new(Array[LogEvent], max_events? : Int32, max_cases? : Int32, max_trace? : Int32) -> Self raise ProcessError
 pub fn EventLog::performance(Self) -> PerformanceReport
 pub fn EventLog::resource_handoffs(Self) -> Array[ResourceHandoff]
+pub fn EventLog::resource_timeline(Self, String, Int64, Int64, max_segments? : Int32) -> Array[ResourceOccupancy] raise ProcessError
 pub fn EventLog::select_cases(Self, CaseSelection) -> Self raise ProcessError
 pub fn EventLog::to_xes(Self) -> String raise ProcessError
 pub fn EventLog::traces(Self) -> Array[CaseTrace]
@@ -188,6 +190,18 @@ pub(all) struct FlowEdge {
 pub fn FlowEdge::equal(Self, Self) -> Bool
 pub fn FlowEdge::not_equal(Self, Self) -> Bool
 pub fn FlowEdge::to_repr(Self) -> @debug.Repr
+
+pub(all) struct FlowWindow {
+  started : Int64
+  completed : Int64
+  cases_started : Int32
+  cases_completed : Int32
+  active_at_start : Int32
+  active_before_end : Int32
+  observed_work_area : Double
+  mean_observed_wip : Double
+  completed_cycles : DurationDistribution
+}
 
 pub(all) struct HandoffPerformance {
   source : String
@@ -342,6 +356,12 @@ pub(all) struct ResourceHandoff {
   target : String
   occurrences : Int32
   cases : Int32
+}
+
+pub(all) struct ResourceOccupancy {
+  started : Int64
+  completed : Int64
+  active : Int32
 }
 
 pub(all) struct ResourcePerformance {
