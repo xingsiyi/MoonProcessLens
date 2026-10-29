@@ -2,6 +2,17 @@
 
 MoonProcessLens 是使用 MoonBit 实现的**过程日志分析与流程挖掘基础库**。它从订单、工单、审批、生产及流水线中已经发生的活动记录，发现实际处理路径，解释与参考流程的偏差，并定位等待、返工和资源并发压力。
 
+## 0.3.0：资源并发与案例流量窗口
+
+- `EventLog::resource_timeline` 返回资源任务并发时间线，保留空闲段并合并同时边界，用于设备、工单和流水线资源压力分析。
+- `EventLog::flow_windows` 统计整案例开始/完成、跨窗活跃数、观察在制量及周期分布，用于订单、审批和服务流程的流量回看。
+
+要求 **moonc >= 0.10.16**。资源并发不直接代表人员利用率，完整案例日志也不能推断未上报或未完成案例；接口与预算详见[功能文档](docs/FEATURE_EXTENSIONS.md)。
+
+```sh
+moon run examples/workload_windows --target wasm-gc --deny-warn
+```
+
 ## 0.2.0：从路径分析扩展到模型级流程挖掘
 
 本版新增模型接口，旧版 0.1.0 不包含这些接口。原有 DFG、参考路径和性能接口保留；`EventLog`、`CaseTrace`、`ReferencePath`、`AlignmentSpec` 的内部数组现为私有，外部代码应使用复制返回的访问方法，避免破坏日志不变量。
@@ -56,7 +67,7 @@ moon run --target native examples/standard_workflow
 
 模块为 `xingsiyi/processlens`。GitHub 与 Mooncakes 发布账号均为 `xingsiyi`；项目继续使用原本地文件夹，文件夹名称不代表产品名称。
 
-安装模型能力版本：`moon add xingsiyi/processlens@0.2.0`。
+安装当前版本：`moon add xingsiyi/processlens@0.3.0`。
 
 ```moonbit
 import { "xingsiyi/processlens" @lens }
@@ -143,14 +154,3 @@ python scripts/verify_repository.py
 测试含独立的公共子序列穷举对齐预言机、整数时间槽区间覆盖/并发预言机、JSON 边界和旧检测器回归。CI 验证所有后端、完整场景与文件工具；远端运行状态以仓库 Actions 页面为准。
 
 采用 MIT 许可证，AI 辅助独立实现；参考、依赖和演进来源见 [来源说明](docs/sources.md)。申报书与过程报告保存在仓库外。
-
-## Source-workspace extensions (unreleased)
-
-Compiler requirement: **moonc >= 0.10.16**. See
-[the API, scope and complexity notes](docs/FEATURE_EXTENSIONS.md) for **资源并发时间线与案例流量窗口**.
-These additions are available in this source tree; the previously published package
-version does not yet contain them. Run the assertion-based example from the repository:
-
-```sh
-moon run examples/workload_windows --target wasm-gc --deny-warn
-```
