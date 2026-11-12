@@ -12,12 +12,13 @@ pub(all) enum ProcessPolicy {
 }
 
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) enum PolicyStatus {
   Satisfied
   Violated
   Inconclusive
   NotApplicable
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend PolicyStatus with Eq::{equal, not_equal}

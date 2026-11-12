@@ -50,11 +50,12 @@ pub fn AlignmentCosts::new(
 }
 
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) enum AlignmentMove {
   Synchronous(event_id~ : String, activity~ : String)
   Unexpected(event_id~ : String, activity~ : String)
   Missing(activity~ : String)
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend AlignmentMove with Eq::{equal, not_equal}

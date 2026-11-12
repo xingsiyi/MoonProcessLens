@@ -1,6 +1,7 @@
 ///|
 /// A pure condition over the current event and previously completed captures.
 /// Arrays are detached when a Stage or Pattern is constructed.
+#derive(Eq, @debug.Debug)
 pub(all) enum Condition {
   Always
   Kind(String)
@@ -14,7 +15,7 @@ pub(all) enum Condition {
   All(Array[Condition])
   Any(Array[Condition])
   Not(Condition)
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend Condition with Eq::{equal, not_equal}
@@ -24,10 +25,11 @@ pub extend Condition with @debug.Debug::{to_repr}
 
 ///|
 /// Events captured by one named positive stage, in their matching order.
+#derive(Eq, @debug.Debug)
 pub(all) struct Capture {
   name : String
   events : Array[Event]
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend Capture with Eq::{equal, not_equal}

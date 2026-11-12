@@ -1,9 +1,10 @@
 ///|
 /// A command for deterministic, explicitly watermarked in-memory replay.
+#derive(Eq, @debug.Debug)
 pub(all) enum StreamInput {
   Observe(Event)
   Advance(Int64)
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend StreamInput with Eq::{equal, not_equal}

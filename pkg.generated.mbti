@@ -3,18 +3,19 @@ package "xingsiyi/processlens"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
-pub fn alignment_to_json(TraceAlignment) -> Json
+pub fn alignment_to_json(TraceAlignment) -> @json.Json
 
-pub fn cohort_comparison_to_json(CohortComparison) -> Json
+pub fn cohort_comparison_to_json(CohortComparison) -> @json.Json
 
-pub fn log_to_json(EventLog) -> Json
+pub fn log_to_json(EventLog) -> @json.Json
 
-pub fn model_alignment_to_json(ModelAlignment) -> Json
+pub fn model_alignment_to_json(ModelAlignment) -> @json.Json
 
-pub fn model_analysis_to_json(ModelAnalysis) -> Json
+pub fn model_analysis_to_json(ModelAnalysis) -> @json.Json
 
 pub fn parse_alignment_spec(String) -> AlignmentSpec raise ProcessError
 
@@ -30,29 +31,31 @@ pub fn parse_policies(String) -> Array[ProcessPolicy] raise ProcessError
 
 pub fn parse_xes(String, mode? : XesMode) -> EventLog raise ProcessError
 
-pub fn performance_to_json(PerformanceReport) -> Json
+pub fn performance_to_json(PerformanceReport) -> @json.Json
 
-pub fn policy_results_to_json(Array[PolicyResult]) -> Json
+pub fn policy_results_to_json(Array[PolicyResult]) -> @json.Json
 
-pub fn process_map_to_json(ProcessMap) -> Json
+pub fn process_map_to_json(ProcessMap) -> @json.Json
 
-pub fn resource_handoffs_to_json(Array[ResourceHandoff]) -> Json
+pub fn resource_handoffs_to_json(Array[ResourceHandoff]) -> @json.Json
 
 // Errors
+#derive(@debug.Debug)
 pub(all) suberror ProcessError {
   InvalidLog(path~ : String, reason~ : String)
   Capacity(resource~ : String, limit~ : Int32)
-} derive(@debug.Debug)
+}
 pub fn ProcessError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct ActivityNode {
   activity : String
   occurrences : Int32
   cases : Int32
   starts : Int32
   ends : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn ActivityNode::equal(Self, Self) -> Bool
 pub fn ActivityNode::not_equal(Self, Self) -> Bool
 pub fn ActivityNode::to_repr(Self) -> @debug.Repr
@@ -68,11 +71,12 @@ pub struct AlignmentCosts {
 }
 pub fn AlignmentCosts::new(unexpected? : Int32, missing? : Int32) -> Self raise ProcessError
 
+#derive(Eq, @debug.Debug)
 pub(all) enum AlignmentMove {
   Synchronous(event_id~ : String, activity~ : String)
   Unexpected(event_id~ : String, activity~ : String)
   Missing(activity~ : String)
-} derive(Eq, @debug.Debug)
+}
 pub fn AlignmentMove::equal(Self, Self) -> Bool
 pub fn AlignmentMove::not_equal(Self, Self) -> Bool
 pub fn AlignmentMove::to_repr(Self) -> @debug.Repr
@@ -181,12 +185,13 @@ pub fn EventLog::select_cases(Self, CaseSelection) -> Self raise ProcessError
 pub fn EventLog::to_xes(Self) -> String raise ProcessError
 pub fn EventLog::traces(Self) -> Array[CaseTrace]
 
+#derive(Eq, @debug.Debug)
 pub(all) struct FlowEdge {
   source : String
   target : String
   occurrences : Int32
   cases : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn FlowEdge::equal(Self, Self) -> Bool
 pub fn FlowEdge::not_equal(Self, Self) -> Bool
 pub fn FlowEdge::to_repr(Self) -> @debug.Repr
@@ -210,6 +215,7 @@ pub(all) struct HandoffPerformance {
   overlapping_pairs : Int32
 }
 
+#derive(Eq, @debug.Debug)
 pub struct LogEvent {
   id : String
   case_id : String
@@ -217,7 +223,7 @@ pub struct LogEvent {
   started : Int64
   completed : Int64
   resource : String?
-} derive(Eq, @debug.Debug)
+}
 pub fn LogEvent::activity(Self) -> String
 pub fn LogEvent::case_id(Self) -> String
 pub fn LogEvent::completed(Self) -> Int64
@@ -264,11 +270,12 @@ pub(all) struct NetArc {
   weight : Int32
 }
 
+#derive(Eq, @debug.Debug)
 pub(all) enum NetMove {
   Sync(event_id~ : String, transition~ : String, activity~ : String)
   LogOnly(event_id~ : String, activity~ : String)
   ModelOnly(transition~ : String, activity~ : String?)
-} derive(Eq, @debug.Debug)
+}
 pub fn NetMove::equal(Self, Self) -> Bool
 pub fn NetMove::not_equal(Self, Self) -> Bool
 pub fn NetMove::to_repr(Self) -> @debug.Repr
@@ -297,7 +304,7 @@ pub fn PetriNet::fire(Self, Array[Int32], String) -> Array[Int32] raise ProcessE
 pub fn PetriNet::initial_marking(Self) -> Array[Int32]
 pub fn PetriNet::new(Array[String], Array[NetTransition], Array[NetArc], Array[PlaceTokens], Array[PlaceTokens]) -> Self raise ProcessError
 pub fn PetriNet::places(Self) -> Array[String]
-pub fn PetriNet::to_json(Self) -> Json
+pub fn PetriNet::to_json(Self) -> @json.Json
 pub fn PetriNet::to_pnml(Self) -> String
 pub fn PetriNet::transitions(Self) -> Array[NetTransition]
 
@@ -313,12 +320,13 @@ pub(all) struct PolicyResult {
   event_ids : Array[String]
 }
 
+#derive(Eq, @debug.Debug)
 pub(all) enum PolicyStatus {
   Satisfied
   Violated
   Inconclusive
   NotApplicable
-} derive(Eq, @debug.Debug)
+}
 pub fn PolicyStatus::equal(Self, Self) -> Bool
 pub fn PolicyStatus::not_equal(Self, Self) -> Bool
 pub fn PolicyStatus::to_repr(Self) -> @debug.Repr

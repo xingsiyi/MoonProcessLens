@@ -1,11 +1,12 @@
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) struct Limits {
   buffered_events : Int32
   active_states : Int32
   partitions : Int32
   outputs_per_call : Int32
   work_per_call : Int32
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend Limits with Eq::{equal, not_equal}

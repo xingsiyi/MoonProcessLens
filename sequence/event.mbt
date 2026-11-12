@@ -1,11 +1,12 @@
 ///|
+#derive(Eq, @debug.Debug)
 pub struct Event {
   id : String
   key : String
   time : Int64
   kind : String
   fields : Array[Field]
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend Event with Eq::{equal, not_equal}

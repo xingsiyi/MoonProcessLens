@@ -1,8 +1,9 @@
 ///|
+#derive(@debug.Debug)
 pub(all) suberror ProcessError {
   InvalidLog(path~ : String, reason~ : String)
   Capacity(resource~ : String, limit~ : Int32)
-} derive(@debug.Debug)
+}
 
 ///|
 pub extend ProcessError with @debug.Debug::{to_repr}
@@ -21,6 +22,7 @@ fn process_label(value : String, path : String) -> Unit raise ProcessError {
 
 ///|
 /// A completed activity occurrence. Intervals may overlap within a case.
+#derive(Eq, @debug.Debug)
 pub struct LogEvent {
   id : String
   case_id : String
@@ -28,7 +30,7 @@ pub struct LogEvent {
   started : Int64
   completed : Int64
   resource : String?
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend LogEvent with Eq::{equal, not_equal}

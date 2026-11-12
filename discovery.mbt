@@ -1,11 +1,12 @@
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) struct ActivityNode {
   activity : String
   occurrences : Int32
   cases : Int32
   starts : Int32
   ends : Int32
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend ActivityNode with Eq::{equal, not_equal}
@@ -14,12 +15,13 @@ pub extend ActivityNode with Eq::{equal, not_equal}
 pub extend ActivityNode with @debug.Debug::{to_repr}
 
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) struct FlowEdge {
   source : String
   target : String
   occurrences : Int32
   cases : Int32
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend FlowEdge with Eq::{equal, not_equal}

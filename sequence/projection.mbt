@@ -1,4 +1,5 @@
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) enum Projection {
   EntityKey
   PatternName
@@ -14,7 +15,7 @@ pub(all) enum Projection {
   MinimumField(String, String)
   MaximumField(String, String)
   AverageDecimal(String, String)
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend Projection with Eq::{equal, not_equal}

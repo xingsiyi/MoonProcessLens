@@ -1,10 +1,11 @@
 ///|
 /// How events not accepted by the next positive occurrence are treated.
+#derive(Eq, @debug.Debug)
 pub(all) enum Contiguity {
   Strict
   SkipNext
   SkipAny
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend Contiguity with Eq::{equal, not_equal}
@@ -14,11 +15,12 @@ pub extend Contiguity with @debug.Debug::{to_repr}
 
 ///|
 /// Selection applied after a match has been emitted.
+#derive(Eq, @debug.Debug)
 pub(all) enum AfterMatch {
   NoSkip
   SkipToNextStart
   SkipPastLast
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend AfterMatch with Eq::{equal, not_equal}
@@ -259,11 +261,12 @@ pub fn Pattern::absence(self : Pattern) -> Condition? {
 
 ///|
 /// Structural classification, not a guarantee on runtime candidate count.
+#derive(Eq, @debug.Debug)
 pub(all) enum BranchingRisk {
   FixedSequence
   BoundedRepetition
   CombinatorialSelection
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend BranchingRisk with Eq::{equal, not_equal}
@@ -272,6 +275,7 @@ pub extend BranchingRisk with Eq::{equal, not_equal}
 pub extend BranchingRisk with @debug.Debug::{to_repr}
 
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) struct PatternAnalysis {
   minimum_captures : Int32
   maximum_captures : Int32
@@ -283,7 +287,7 @@ pub(all) struct PatternAnalysis {
   guarded_stages : Int32
   has_absence : Bool
   branching_risk : BranchingRisk
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend PatternAnalysis with Eq::{equal, not_equal}

@@ -1,9 +1,10 @@
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) enum NetMove {
   Sync(event_id~ : String, transition~ : String, activity~ : String)
   LogOnly(event_id~ : String, activity~ : String)
   ModelOnly(transition~ : String, activity~ : String?)
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend NetMove with Eq::{equal, not_equal}

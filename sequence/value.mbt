@@ -1,11 +1,12 @@
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) enum Value {
   Text(String)
   Integer(Int64)
   Decimal(Double)
   Boolean(Bool)
   NullValue
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend Value with Eq::{equal, not_equal}
@@ -14,10 +15,11 @@ pub extend Value with Eq::{equal, not_equal}
 pub extend Value with @debug.Debug::{to_repr}
 
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) struct Field {
   name : String
   value : Value
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend Field with Eq::{equal, not_equal}
@@ -52,6 +54,7 @@ pub fn Value::type_name(self : Value) -> String {
 }
 
 ///|
+#derive(Eq, @debug.Debug)
 pub(all) enum Comparison {
   Equal
   NotEqual
@@ -59,7 +62,7 @@ pub(all) enum Comparison {
   LessEqual
   Greater
   GreaterEqual
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 pub extend Comparison with Eq::{equal, not_equal}

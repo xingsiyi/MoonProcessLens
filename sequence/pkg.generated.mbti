@@ -3,6 +3,7 @@ package "xingsiyi/processlens/sequence"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
@@ -30,27 +31,27 @@ pub const MAX_WINDOW : Int64 = 31536000000
 
 pub const MAX_WIRE_TEXT_UNITS : Int32 = 1048576
 
-pub fn alert_record_to_json(AlertRecord) -> Json raise CepError
+pub fn alert_record_to_json(AlertRecord) -> @json.Json raise CepError
 
-pub fn batch_to_json(Batch) -> Json
+pub fn batch_to_json(Batch) -> @json.Json
 
 pub fn checked_format_event(Event) -> String raise CepError
 
 pub fn command_chunks(String, max_units? : Int32) -> Iter[StringView] raise CepError
 
-pub fn command_from_json(Json) -> StreamInput raise CepError
+pub fn command_from_json(@json.Json) -> StreamInput raise CepError
 
-pub fn command_to_json(StreamInput) -> Json
+pub fn command_to_json(StreamInput) -> @json.Json
 
-pub fn condition_from_json(Json) -> Condition raise CepError
+pub fn condition_from_json(@json.Json) -> Condition raise CepError
 
-pub fn condition_to_json(Condition) -> Json raise CepError
+pub fn condition_to_json(Condition) -> @json.Json raise CepError
 
-pub fn evaluation_to_json(Evaluation) -> Json
+pub fn evaluation_to_json(Evaluation) -> @json.Json
 
-pub fn event_from_json(Json) -> Event raise CepError
+pub fn event_from_json(@json.Json) -> Event raise CepError
 
-pub fn event_to_json(Event) -> Json
+pub fn event_to_json(Event) -> @json.Json
 
 pub fn format_command(StreamInput) -> String raise CepError
 
@@ -64,17 +65,17 @@ pub fn format_program(Program) -> String raise CepError
 
 pub fn format_session(Session) -> String raise CepError
 
-pub fn inspection_to_json(Inspection) -> Json
+pub fn inspection_to_json(Inspection) -> @json.Json
 
-pub fn limits_from_json(Json) -> Limits raise CepError
+pub fn limits_from_json(@json.Json) -> Limits raise CepError
 
-pub fn limits_to_json(Limits) -> Json
+pub fn limits_to_json(Limits) -> @json.Json
 
-pub fn match_to_json(Match) -> Json
+pub fn match_to_json(Match) -> @json.Json
 
-pub fn metrics_to_json(DetectionMetrics) -> Json
+pub fn metrics_to_json(DetectionMetrics) -> @json.Json
 
-pub fn monitor_stats_to_json(MonitorStats) -> Json
+pub fn monitor_stats_to_json(MonitorStats) -> @json.Json
 
 pub fn parse_command(String) -> StreamInput raise CepError
 
@@ -88,50 +89,52 @@ pub fn parse_program(String) -> Program raise CepError
 
 pub fn parse_session(String, max_work? : Int32) -> Session raise CepError
 
-pub fn pattern_from_json(Json) -> Pattern raise CepError
+pub fn pattern_from_json(@json.Json) -> Pattern raise CepError
 
-pub fn pattern_to_json(Pattern) -> Json
+pub fn pattern_to_json(Pattern) -> @json.Json
 
-pub fn program_from_json(Json) -> Program raise CepError
+pub fn program_from_json(@json.Json) -> Program raise CepError
 
-pub fn program_to_json(Program) -> Json
+pub fn program_to_json(Program) -> @json.Json
 
-pub fn projected_record_to_json(Array[Field]) -> Json raise CepError
+pub fn projected_record_to_json(Array[Field]) -> @json.Json raise CepError
 
-pub fn projection_from_json(Pattern, Json) -> ProjectionPlan raise CepError
+pub fn projection_from_json(Pattern, @json.Json) -> ProjectionPlan raise CepError
 
-pub fn projection_to_json(ProjectionPlan) -> Json
+pub fn projection_to_json(ProjectionPlan) -> @json.Json
 
 pub fn replay(Array[Pattern], Array[StreamInput], limits? : Limits, max_commands? : Int32, max_outputs? : Int32) -> Array[Batch] raise CepError
 
-pub fn session_from_json(Json, max_work? : Int32) -> Session raise CepError
+pub fn session_from_json(@json.Json, max_work? : Int32) -> Session raise CepError
 
-pub fn session_to_json(Session) -> Json
+pub fn session_to_json(Session) -> @json.Json
 
-pub fn stage_diagnostics_to_json(Array[StageDiagnostic]) -> Json
+pub fn stage_diagnostics_to_json(Array[StageDiagnostic]) -> @json.Json
 
-pub fn timeout_to_json(Timeout) -> Json
+pub fn timeout_to_json(Timeout) -> @json.Json
 
-pub fn value_from_json(Json) -> Value raise CepError
+pub fn value_from_json(@json.Json) -> Value raise CepError
 
-pub fn value_to_json(Value) -> Json raise CepError
+pub fn value_to_json(Value) -> @json.Json raise CepError
 
 // Errors
+#derive(@debug.Debug)
 pub(all) suberror CepError {
   Invalid(path~ : String, reason~ : String)
   Resource(resource~ : String, limit~ : Int32)
   LateEvent(time~ : Int64, watermark~ : Int64)
   WatermarkRegression(previous~ : Int64, requested~ : Int64)
-} derive(@debug.Debug)
+}
 pub fn CepError::message(Self) -> String
 pub fn CepError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) enum AfterMatch {
   NoSkip
   SkipToNextStart
   SkipPastLast
-} derive(Eq, @debug.Debug)
+}
 pub fn AfterMatch::equal(Self, Self) -> Bool
 pub fn AfterMatch::not_equal(Self, Self) -> Bool
 pub fn AfterMatch::to_repr(Self) -> @debug.Repr
@@ -156,19 +159,21 @@ pub fn Batch::work(Self) -> Int32
 
 type Branch
 
+#derive(Eq, @debug.Debug)
 pub(all) enum BranchingRisk {
   FixedSequence
   BoundedRepetition
   CombinatorialSelection
-} derive(Eq, @debug.Debug)
+}
 pub fn BranchingRisk::equal(Self, Self) -> Bool
 pub fn BranchingRisk::not_equal(Self, Self) -> Bool
 pub fn BranchingRisk::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Capture {
   name : String
   events : Array[Event]
-} derive(Eq, @debug.Debug)
+}
 pub fn Capture::equal(Self, Self) -> Bool
 pub fn Capture::not_equal(Self, Self) -> Bool
 pub fn Capture::to_repr(Self) -> @debug.Repr
@@ -202,6 +207,7 @@ pub fn CommandReader::line(Self) -> Int32
 pub fn CommandReader::new(max_line? : Int32, max_commands? : Int32) -> Self raise CepError
 pub fn CommandReader::pending_units(Self) -> Int32
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Comparison {
   Equal
   NotEqual
@@ -209,11 +215,12 @@ pub(all) enum Comparison {
   LessEqual
   Greater
   GreaterEqual
-} derive(Eq, @debug.Debug)
+}
 pub fn Comparison::equal(Self, Self) -> Bool
 pub fn Comparison::not_equal(Self, Self) -> Bool
 pub fn Comparison::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Condition {
   Always
   Kind(String)
@@ -227,7 +234,7 @@ pub(all) enum Condition {
   All(Array[Condition])
   Any(Array[Condition])
   Not(Condition)
-} derive(Eq, @debug.Debug)
+}
 pub fn Condition::equal(Self, Self) -> Bool
 pub fn Condition::evaluate(Self, Event, Array[Capture]) -> Bool raise CepError
 pub fn Condition::explain(Self, Event, captures? : Array[Capture]) -> Evaluation raise CepError
@@ -241,11 +248,12 @@ pub(all) struct ConditionNote {
   reason : String
 }
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Contiguity {
   Strict
   SkipNext
   SkipAny
-} derive(Eq, @debug.Debug)
+}
 pub fn Contiguity::equal(Self, Self) -> Bool
 pub fn Contiguity::not_equal(Self, Self) -> Bool
 pub fn Contiguity::to_repr(Self) -> @debug.Repr
@@ -312,13 +320,14 @@ pub struct Evaluation {
 pub fn Evaluation::matched(Self) -> Bool
 pub fn Evaluation::notes(Self) -> Array[ConditionNote]
 
+#derive(Eq, @debug.Debug)
 pub struct Event {
   id : String
   key : String
   time : Int64
   kind : String
   fields : Array[Field]
-} derive(Eq, @debug.Debug)
+}
 pub fn Event::equal(Self, Self) -> Bool
 pub fn Event::field(Self, String) -> Value?
 pub fn Event::fields(Self) -> Array[Field]
@@ -330,10 +339,11 @@ pub fn Event::not_equal(Self, Self) -> Bool
 pub fn Event::time(Self) -> Int64
 pub fn Event::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Field {
   name : String
   value : Value
-} derive(Eq, @debug.Debug)
+}
 pub fn Field::equal(Self, Self) -> Bool
 pub fn Field::not_equal(Self, Self) -> Bool
 pub fn Field::to_repr(Self) -> @debug.Repr
@@ -361,13 +371,14 @@ pub fn Inspection::partitions(Self) -> Array[PartitionStatus]
 pub fn Inspection::patterns(Self) -> Array[PatternStatus]
 pub fn Inspection::watermark(Self) -> Int64
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Limits {
   buffered_events : Int32
   active_states : Int32
   partitions : Int32
   outputs_per_call : Int32
   work_per_call : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn Limits::default() -> Self
 pub fn Limits::equal(Self, Self) -> Bool
 pub fn Limits::not_equal(Self, Self) -> Bool
@@ -450,6 +461,7 @@ pub fn Pattern::stage_names(Self) -> Array[String]
 pub fn Pattern::stages(Self) -> Array[Stage]
 pub fn Pattern::within(Self) -> Int64
 
+#derive(Eq, @debug.Debug)
 pub(all) struct PatternAnalysis {
   minimum_captures : Int32
   maximum_captures : Int32
@@ -461,7 +473,7 @@ pub(all) struct PatternAnalysis {
   guarded_stages : Int32
   has_absence : Bool
   branching_risk : BranchingRisk
-} derive(Eq, @debug.Debug)
+}
 pub fn PatternAnalysis::equal(Self, Self) -> Bool
 pub fn PatternAnalysis::not_equal(Self, Self) -> Bool
 pub fn PatternAnalysis::to_repr(Self) -> @debug.Repr
@@ -499,7 +511,7 @@ pub struct Program {
   limits : Limits
   projections : Array[ProjectionPlan]
 }
-pub fn Program::describe(Self) -> Json
+pub fn Program::describe(Self) -> @json.Json
 pub fn Program::engine(Self) -> Engine raise CepError
 pub fn Program::limits(Self) -> Limits
 pub fn Program::monitor(Self, max_commands? : Int32) -> Monitor raise CepError
@@ -508,6 +520,7 @@ pub fn Program::patterns(Self) -> Array[Pattern]
 pub fn Program::project(Self, Batch) -> Array[AlertRecord] raise CepError
 pub fn Program::projections(Self) -> Array[ProjectionPlan]
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Projection {
   EntityKey
   PatternName
@@ -523,7 +536,7 @@ pub(all) enum Projection {
   MinimumField(String, String)
   MaximumField(String, String)
   AverageDecimal(String, String)
-} derive(Eq, @debug.Debug)
+}
 pub fn Projection::equal(Self, Self) -> Bool
 pub fn Projection::not_equal(Self, Self) -> Bool
 pub fn Projection::to_repr(Self) -> @debug.Repr
@@ -581,10 +594,11 @@ pub(all) struct StageDiagnostic {
 
 type Stamped
 
+#derive(Eq, @debug.Debug)
 pub(all) enum StreamInput {
   Observe(Event)
   Advance(Int64)
-} derive(Eq, @debug.Debug)
+}
 pub fn StreamInput::equal(Self, Self) -> Bool
 pub fn StreamInput::not_equal(Self, Self) -> Bool
 pub fn StreamInput::to_repr(Self) -> @debug.Repr
@@ -605,13 +619,14 @@ pub(all) enum Update {
   Progress(Batch)
 }
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Value {
   Text(String)
   Integer(Int64)
   Decimal(Double)
   Boolean(Bool)
   NullValue
-} derive(Eq, @debug.Debug)
+}
 pub fn Value::compare(Self, Comparison, Self) -> Bool
 pub fn Value::equal(Self, Self) -> Bool
 pub fn Value::not_equal(Self, Self) -> Bool

@@ -1,10 +1,11 @@
 ///|
+#derive(@debug.Debug)
 pub(all) suberror CepError {
   Invalid(path~ : String, reason~ : String)
   Resource(resource~ : String, limit~ : Int32)
   LateEvent(time~ : Int64, watermark~ : Int64)
   WatermarkRegression(previous~ : Int64, requested~ : Int64)
-} derive(@debug.Debug)
+}
 
 ///|
 pub extend CepError with @debug.Debug::{to_repr}
